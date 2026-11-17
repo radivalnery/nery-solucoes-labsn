@@ -1,0 +1,3154 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NERY Soluções | LabSN 1D — Simulador Interativo de Transporte de Nêutrons</title>
+  <script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body.app-dark {
+      --background: #090d16;
+      --card: #111827;
+      --card-border: #1f2937;
+      --border: #374151;
+      --foreground: #f8fafc;
+      --muted-foreground: #94a3b8;
+      background-color: #090d16;
+      color: #f8fafc;
+    }
+    body.app-light {
+      --background: #f8fafc;
+      --card: #ffffff;
+      --card-border: #e2e8f0;
+      --border: #cbd5e1;
+      --foreground: #0f172a;
+      --muted-foreground: #475569;
+      background-color: #f8fafc;
+      color: #0f172a;
+    }
+    body.projector-mode {
+      font-size: 15px !important;
+    }
+    body.projector-mode .proj-text {
+      font-size: 13.5px !important;
+    }
+    canvas {
+      display: block;
+      width: 100%;
+      border-radius: 8px;
+      cursor: grab;
+    }
+    canvas:active {
+      cursor: grabbing;
+    }
+    input[type="range"] {
+      height: 5px;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    select {
+      background-color: var(--card);
+      color: var(--foreground);
+    }
+    .module-pill {
+      transition: all 0.15s ease;
+    }
+    .module-pill.active {
+      background-color: #2563eb;
+      color: #ffffff;
+      border-color: #3b82f6;
+    }
+    .legend-chip {
+      transition: all 0.15s ease;
+      cursor: pointer;
+      user-select: none;
+    }
+    .legend-chip:hover {
+      transform: translateY(-1px);
+      border-color: #3b82f6;
+    }
+    .legend-chip.active-chip {
+      background-color: rgba(37, 99, 235, 0.22);
+      border-color: #3b82f6 !important;
+      box-shadow: 0 0 0 1px #3b82f6;
+    }
+    .formula-tab {
+      transition: all 0.15s ease;
+      cursor: pointer;
+    }
+    .formula-tab.active {
+      background-color: #2563eb;
+      color: #ffffff;
+      border-color: #3b82f6;
+    }
+    /* Tipografia Matemática Nativa no Formato LaTeX / Computer Modern do Relatório */
+    math {
+      font-family: 'Latin Modern Math', 'Computer Modern Serif', 'Cambria Math', 'STIX Two Math', 'Times New Roman', serif;
+      font-size: 1.16rem;
+      line-height: 1.5;
+    }
+    body.projector-mode math {
+      font-size: 1.32rem;
+    }
+    .doc-eq-box {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+      padding: 0.65rem 1rem;
+      border-radius: 0.5rem;
+      overflow-x: auto;
+      transition: all 0.2s ease;
+      background-color: var(--card);
+      border: 1px solid var(--card-border);
+      color: var(--foreground);
+    }
+    .doc-eq-box.paper-mode {
+      background-color: #ffffff !important;
+      color: #0b0f19 !important;
+      border: 1px solid #cbd5e1 !important;
+      box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.04);
+    }
+    .doc-eq-center {
+      flex: 1;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      overflow-x: auto;
+    }
+    .doc-eq-num {
+      font-family: 'Latin Modern Roman', 'Computer Modern Serif', 'Times New Roman', Georgia, serif;
+      font-size: 1.05rem;
+      font-weight: 500;
+      flex-shrink: 0;
+      opacity: 0.88;
+      padding-left: 0.5rem;
+    }
+    .wdd-boxed {
+      border: 1.5px solid currentColor;
+      padding: 0.45rem 0.85rem;
+      border-radius: 2px;
+      display: inline-block;
+    }
+  </style>
+</head>
+<body class="app-dark antialiased p-2 sm:p-3 m-0 font-sans transition-colors duration-200">
+  <div id="app-root" class="max-w-7xl mx-auto space-y-2.5">
+
+    <!-- ================= BARRA SUPERIOR DO APLICATIVO (MARCA NERY SOLUÇÕES) ================= -->
+    <header class="flex flex-wrap items-center justify-between gap-2 p-2.5 rounded-xl bg-[var(--card)] border border-[var(--card-border)] shadow-sm text-xs">
+      <div class="flex flex-wrap items-center gap-2.5">
+        <div class="flex items-center gap-2.5">
+          <!-- Emblema NERY Soluções -->
+          <div class="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-sm border border-blue-400/30">
+            <span class="inline-flex items-center justify-center w-5 h-5 rounded bg-white/15 font-black text-[11px] tracking-tighter">NS</span>
+            <div class="leading-none">
+              <div class="font-extrabold text-xs tracking-wide uppercase">NERY Soluções</div>
+              <div class="text-[9px] text-blue-100 font-medium tracking-wider">Engenharia &amp; Simulação</div>
+            </div>
+          </div>
+          <div>
+            <div class="flex flex-wrap items-center gap-2">
+              <span class="font-bold text-sm tracking-tight text-[var(--foreground)]">LabSN 1D — Transporte de Partículas</span>
+              <span id="regime-badge" class="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-blue-500/15 text-blue-500 border border-blue-500/30">
+                Subcrítico (c₀ = 0.970)
+              </span>
+            </div>
+            <p class="text-[10px] text-[var(--muted-foreground)] hidden sm:block">
+              Caminho Óptico Exato (<i>s = −ln(ξ)/σ<sub>t</sub></i> em cm) &amp; Solver Determinístico <i>S</i><sub>2</sub> / <i>S</i><sub>4</sub> • UESC
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Controles Principais de Execução e Sala de Aula -->
+      <div class="flex flex-wrap items-center gap-1.5">
+        <select id="preset-select" class="px-2 py-1 rounded-lg border border-[var(--border)] bg-[var(--card)] text-[var(--foreground)] text-xs font-medium focus:outline-none" title="Escolher cenário pré-configurado da disciplina">
+          <option value="proj1_hom">Cenário 1A: Placa Homogênea (L=100 cm, Fonte Contorno)</option>
+          <option value="proj1_het">Cenário 1B: Heterogênea 3 Regiões A/B/C (L=50 cm)</option>
+          <option value="proj2_hom">Cenário 2A: Reator Homogêneo Crítico (L=20 cm, νσf=0.11)</option>
+          <option value="proj2_super">Cenário 2C: Reator Supercrítico (L=20 cm, νσf=0.13, c₀>1)</option>
+          <option value="proj2_het">Cenário 2B: Reator Heterogêneo 5 Zonas (L=100 cm)</option>
+          <option value="custom">Cenário Personalizado (Edição Livre)</option>
+        </select>
+
+        <!-- Controle de Velocidade Física (cm/s simulados) -->
+        <div class="flex items-center gap-1 px-2 py-1 rounded-lg bg-[var(--background)] border border-[var(--border)]" title="Velocidade da Animação">
+          <span class="text-[11px] text-[var(--muted-foreground)]">Vel:</span>
+          <input id="slider-speed" type="range" min="0.10" max="2.50" step="0.05" value="1.00" class="w-14 accent-blue-500">
+          <span id="val-speed" class="font-mono text-[11px] font-semibold w-8 text-right">1.0x</span>
+        </div>
+
+        <button id="btn-play" class="px-2.5 py-1 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-semibold transition-colors">
+          ⏸ Pausar
+        </button>
+        <button id="btn-step" class="px-2 py-1 rounded-lg bg-[var(--background)] hover:bg-[var(--card-border)] border border-[var(--border)] font-medium transition-colors" title="Avançar passo a passo">
+          ⏭ Passo
+        </button>
+        <button id="btn-reset" class="px-2 py-1 rounded-lg bg-[var(--background)] hover:bg-[var(--card-border)] border border-[var(--border)] font-medium transition-colors">
+          ↺ Reiniciar
+        </button>
+
+        <button id="btn-projector" class="px-2 py-1 rounded-lg bg-[var(--background)] hover:bg-[var(--card-border)] border border-[var(--border)] font-bold transition-colors" title="Modo Projetor / Sala de Aula">
+          A+ Aula
+        </button>
+        <button id="btn-theme" class="px-2 py-1 rounded-lg bg-[var(--background)] hover:bg-[var(--card-border)] border border-[var(--border)] font-medium transition-colors" title="Alternar Tema Claro / Escuro">
+          ☀️/🌙
+        </button>
+        <button id="btn-fullscreen" class="px-2 py-1 rounded-lg bg-[var(--background)] hover:bg-[var(--card-border)] border border-[var(--border)] font-medium transition-colors" title="Tela Cheia">
+          ⛶
+        </button>
+      </div>
+    </header>
+
+    <!-- ================= MENU DE MÓDULOS DIDÁTICOS ================= -->
+    <nav class="flex flex-wrap items-center justify-between gap-2 px-3 py-1.5 rounded-xl bg-[var(--card)] border border-[var(--card-border)] text-xs">
+      <div class="flex flex-wrap items-center gap-1.5">
+        <span class="font-bold text-[var(--muted-foreground)] mr-1">Módulos Visíveis:</span>
+        
+        <button data-mod="controls" class="module-pill active px-2.5 py-1 rounded-full border border-[var(--border)] font-medium flex items-center gap-1">
+          <span>⚙️ Parâmetros e Regiões</span>
+        </button>
+        <button data-mod="legend" class="module-pill active px-2.5 py-1 rounded-full border border-[var(--border)] font-medium flex items-center gap-1">
+          <span>📖 Legenda &amp; Glossário Clicável</span>
+        </button>
+        <button data-mod="theory" class="module-pill active px-2.5 py-1 rounded-full border border-[var(--border)] font-medium flex items-center gap-1">
+          <span>📐 Fórmulas do Trabalho &amp; Espectro</span>
+        </button>
+        <button data-mod="charts" class="module-pill active px-2.5 py-1 rounded-full border border-[var(--border)] font-medium flex items-center gap-1">
+          <span>📈 Gráficos S<sub>N</sub> (ϕ e ψ<sub>m</sub>)</span>
+        </button>
+        <button data-mod="diagram" class="module-pill px-2.5 py-1 rounded-full border border-[var(--border)] font-medium flex items-center gap-1">
+          <span>🎯 Modo Diagrama Estático</span>
+        </button>
+      </div>
+
+      <div class="flex items-center gap-1.5">
+        <button id="btn-export-png" class="px-2 py-1 rounded-lg bg-emerald-600/15 hover:bg-emerald-600/25 text-emerald-500 border border-emerald-500/30 font-semibold transition-colors">
+          📷 Baixar PNG
+        </button>
+        <button id="btn-export-csv" class="px-2 py-1 rounded-lg bg-purple-600/15 hover:bg-purple-600/25 text-purple-400 border border-purple-500/30 font-semibold transition-colors">
+          📊 Exportar CSV
+        </button>
+      </div>
+    </nav>
+
+    <!-- ================= MÓDULO 1: PAINEL DE CONFIGURAÇÃO FÍSICA ================= -->
+    <section id="mod-controls" class="grid grid-cols-1 md:grid-cols-3 gap-2 text-xs proj-text">
+      
+      <!-- Coluna 1: Geometria e Seções de Choque Vinculadas -->
+      <div class="p-2.5 rounded-xl bg-[var(--card)] border border-[var(--card-border)] space-y-1.5">
+        <div class="flex items-center justify-between font-bold text-[var(--foreground)] border-b border-[var(--card-border)] pb-1">
+          <span>1. Geometria e Regiões</span>
+          <select id="select-geom-mode" class="px-1.5 py-0.5 rounded border border-[var(--border)] text-[11px] font-semibold">
+            <option value="single">1 Região (Homogênea)</option>
+            <option value="three_abc">3 Regiões (A, B, C)</option>
+            <option value="five_reactor">5 Zonas (Refl/Fuel2/Fuel1)</option>
+          </select>
+        </div>
+
+        <div class="flex items-center justify-between gap-1 pt-0.5">
+          <span class="text-[11px] text-[var(--muted-foreground)]">Editar Região:</span>
+          <div id="region-tabs" class="flex gap-1">
+            <button data-reg="0" class="reg-tab px-2 py-0.5 rounded text-[11px] font-bold bg-blue-600 text-white">Região A</button>
+            <button data-reg="1" class="reg-tab px-2 py-0.5 rounded text-[11px] font-medium bg-[var(--background)] border border-[var(--border)] hidden">Região B</button>
+            <button data-reg="2" class="reg-tab px-2 py-0.5 rounded text-[11px] font-medium bg-[var(--background)] border border-[var(--border)] hidden">Região C</button>
+          </div>
+        </div>
+
+        <div class="space-y-1 pt-0.5">
+          <div class="flex justify-between">
+            <label for="slider-sigs" class="text-[var(--muted-foreground)]">Espalhamento <b id="lbl-reg-sigs">(Reg 1)</b> <i>σ<sub>s0</sub></i>:</label>
+            <span id="val-sigs" class="font-mono font-semibold text-blue-500">0.97 cm⁻¹ (97%)</span>
+          </div>
+          <input id="slider-sigs" type="range" min="0.00" max="1.00" step="0.01" value="0.97" class="w-full accent-blue-500">
+        </div>
+
+        <div class="space-y-1">
+          <div class="flex justify-between">
+            <label for="slider-siga" class="text-[var(--muted-foreground)]">Absorção <b id="lbl-reg-siga">(Reg 1)</b> <i>σ<sub>a</sub></i>:</label>
+            <span id="val-siga" class="font-mono font-semibold text-red-500">0.03 cm⁻¹ (3%)</span>
+          </div>
+          <input id="slider-siga" type="range" min="0.00" max="1.00" step="0.01" value="0.03" class="w-full accent-red-500">
+        </div>
+
+        <div class="flex items-center justify-between text-[11px] text-[var(--muted-foreground)] pt-1 border-t border-[var(--card-border)]">
+          <label class="flex items-center gap-1 cursor-pointer select-none" title="Mantém σs0 + σa = σt automaticamente">
+            <input id="chk-lock-sum" type="checkbox" checked class="rounded accent-blue-500">
+            <span class="font-medium text-[var(--foreground)]">Vincular <i>σ<sub>s0</sub> + σ<sub>a</sub> = σ<sub>t</sub></i></span>
+          </label>
+          <div class="flex items-center gap-1 font-mono">
+            <span id="sigmat-readout" class="font-bold text-emerald-500">σt = 1.00</span>
+            <button id="btn-force-sigt1" title="Padronizar σt = 1.00 cm⁻¹ nesta região" class="px-1.5 py-0.5 rounded bg-[var(--background)] border border-[var(--border)] text-[10px] hover:bg-[var(--card-border)]">σt=1</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Coluna 2: Multiplicação (k_eff, Fissão) e Fonte Extra -->
+      <div class="p-2.5 rounded-xl bg-[var(--card)] border border-[var(--card-border)] space-y-1.5">
+        <div class="flex items-center justify-between font-bold text-[var(--foreground)] border-b border-[var(--card-border)] pb-1">
+          <span>2. Fissão, <i>k</i><sub>eff</sub> e Fonte Extra</span>
+          <span id="c0-readout" class="font-mono text-amber-500">c₀ = 0.970</span>
+        </div>
+
+        <div class="space-y-0.5">
+          <div class="flex justify-between">
+            <label for="slider-keff" class="text-[var(--muted-foreground)]">Fator Efetivo (<i>k</i><sub>eff</sub>):</label>
+            <span id="val-keff" class="font-mono font-semibold">1.000</span>
+          </div>
+          <div class="flex items-center gap-1.5">
+            <input id="slider-keff" type="range" min="0.50" max="1.60" step="0.01" value="1.00" class="w-full accent-amber-500">
+            <button id="btn-keff-one" title="Fixar k_eff = 1.00" class="px-1.5 py-0.5 rounded bg-[var(--background)] border border-[var(--border)] text-[10px] font-mono hover:bg-[var(--card-border)]">1.0</button>
+            <button id="btn-keff-auto" title="Usar o k_eff crítico convergido pelo método determinístico SN" class="px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-400 border border-amber-500/40 text-[10px] font-mono hover:bg-amber-500/30">Auto k</button>
+          </div>
+        </div>
+
+        <div class="space-y-0.5">
+          <div class="flex justify-between">
+            <label for="slider-nusf" class="text-[var(--muted-foreground)]">Fissão <b id="lbl-reg-nusf">(Reg 1)</b> <i>νσ<sub>f</sub></i>:</label>
+            <span id="val-nusf" class="font-mono font-semibold text-amber-500">0.00 cm⁻¹</span>
+          </div>
+          <input id="slider-nusf" type="range" min="0.00" max="0.70" step="0.01" value="0.00" class="w-full accent-amber-500">
+        </div>
+
+        <div class="space-y-0.5">
+          <div class="flex justify-between">
+            <label for="slider-sext" class="text-[var(--muted-foreground)]">Fonte Extra <b id="lbl-reg-sext">(Reg 1)</b> <i>S</i><sub>ext</sub>:</label>
+            <span id="val-sext" class="font-mono font-semibold text-cyan-500">0.0 n/(cm³·s)</span>
+          </div>
+          <input id="slider-sext" type="range" min="0.0" max="2.5" step="0.1" value="0.0" class="w-full accent-cyan-500">
+        </div>
+      </div>
+
+      <!-- Coluna 3: Contornos, Rastreamento de Nêutron e Camadas -->
+      <div class="p-2.5 rounded-xl bg-[var(--card)] border border-[var(--card-border)] space-y-1.5">
+        <div class="flex items-center justify-between font-bold text-[var(--foreground)] border-b border-[var(--card-border)] pb-1">
+          <span>3. Contornos e Nêutron Guia</span>
+          <button id="btn-spawn-tracked" class="px-2 py-0.5 rounded text-[10px] font-bold bg-pink-600 hover:bg-pink-700 text-white transition-colors">
+            + Lançar Nêutron Guia
+          </button>
+        </div>
+
+        <div class="grid grid-cols-2 gap-1.5">
+          <div>
+            <label class="block text-[10px] text-[var(--muted-foreground)]">Contorno Esq. (x=0):</label>
+            <select id="select-bc-left" class="w-full px-1 py-0.5 rounded border border-[var(--border)] text-[11px]">
+              <option value="isotropic">Fonte Incidente (ψ=1)</option>
+              <option value="reflective">Reflexivo (Espelho)</option>
+              <option value="vacuum">Vácuo (Fuga)</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-[10px] text-[var(--muted-foreground)]">Contorno Dir. (x=L):</label>
+            <select id="select-bc-right" class="w-full px-1 py-0.5 rounded border border-[var(--border)] text-[11px]">
+              <option value="vacuum">Vácuo (Fuga)</option>
+              <option value="reflective">Reflexivo (Espelho)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="flex flex-wrap items-center justify-between gap-1 pt-1 border-t border-[var(--card-border)]">
+          <label class="flex items-center gap-1 cursor-pointer select-none">
+            <input id="chk-track-neutron" type="checkbox" checked class="rounded accent-pink-500">
+            <span class="text-[11px] font-semibold text-pink-500">Seguir Nêutron</span>
+          </label>
+          <label class="flex items-center gap-1 cursor-pointer select-none">
+            <input id="chk-flux-curve" type="checkbox" checked class="rounded accent-emerald-500">
+            <span class="text-[11px] font-medium">Sobrepor <i>ϕ</i>(<i>x</i>)</span>
+          </label>
+          <label class="flex items-center gap-1 cursor-pointer select-none">
+            <input id="chk-sn-rays" type="checkbox" class="rounded accent-purple-500">
+            <span class="text-[11px] font-medium">Ângulos <i>S</i><sub>4</sub></span>
+          </label>
+        </div>
+
+        <!-- Telemetria Ao Vivo do Nêutron Seguido com Livre Caminho Médio Medido -->
+        <div id="tracker-hud" class="p-1.5 rounded bg-pink-500/10 border border-pink-500/30 text-[11px] font-mono flex items-center justify-between">
+          <span id="tracker-status" class="truncate text-pink-400 font-semibold">Guia: Ativo</span>
+          <span id="tracker-cols" class="text-[var(--foreground)] font-bold ml-1 flex-shrink-0">⟨s⟩: — cm</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= VISUALIZAÇÃO PRINCIPAL DA PLACA 1D + CONTROLE DE ZOOM ================= -->
+    <section class="space-y-1.5">
+      
+      <!-- Barra de Controle de Zoom e Escala Física -->
+      <div class="flex flex-wrap items-center justify-between gap-2 px-3 py-1.5 rounded-xl bg-[var(--card)] border border-[var(--card-border)] text-xs">
+        <div class="flex flex-wrap items-center gap-2">
+          <span class="font-bold text-[var(--foreground)] flex items-center gap-1">
+            🔍 Zoom Espacial:
+          </span>
+          <input id="slider-zoom" type="range" min="1.0" max="12.0" step="0.5" value="1.0" class="w-24 accent-pink-500" title="Role a roda do mouse sobre a placa ou use este controle para dar zoom">
+          <span id="val-zoom" class="font-mono font-bold text-pink-400 w-10">1.0x</span>
+
+          <div class="flex items-center gap-1">
+            <button data-z="1" class="zoom-preset px-1.5 py-0.5 rounded bg-[var(--background)] border border-[var(--border)] text-[10px] font-mono hover:bg-[var(--card-border)]">1x (Tudo)</button>
+            <button data-z="4" class="zoom-preset px-1.5 py-0.5 rounded bg-[var(--background)] border border-[var(--border)] text-[10px] font-mono hover:bg-[var(--card-border)]">4x</button>
+            <button data-z="8" class="zoom-preset px-1.5 py-0.5 rounded bg-[var(--background)] border border-[var(--border)] text-[10px] font-mono hover:bg-[var(--card-border)]">8x (Micro)</button>
+          </div>
+
+          <label class="flex items-center gap-1 ml-1 cursor-pointer select-none" title="Quando com Zoom > 1x, a câmera acompanha automaticamente o Nêutron Guia pela placa">
+            <input id="chk-follow-cam" type="checkbox" checked class="rounded accent-pink-500">
+            <span class="text-[11px] font-medium text-pink-400">Câmera no Guia</span>
+          </label>
+        </div>
+
+        <div id="zoom-window-readout" class="font-mono text-[11px] text-[var(--muted-foreground)]">
+          Janela: x ∈ [0.0, 50.0 cm] | Escala Física Exata (s = −ln ξ / σt)
+        </div>
+      </div>
+
+      <!-- Canvas da Placa -->
+      <div class="relative w-full rounded-xl border border-[var(--card-border)] bg-[var(--card)] overflow-hidden shadow-sm">
+        <canvas id="slabCanvas" height="255" title="Use a roda do mouse para dar Zoom, arraste para mover a câmera, ou clique em um nêutron para segui-lo!"></canvas>
+        
+        <div id="badge-left" class="absolute top-2 left-3 text-[11px] font-bold text-emerald-400 bg-black/65 px-2 py-0.5 rounded border border-emerald-500/30 pointer-events-none">
+          x = 0 cm: Fonte Prescrita (ψ = 1.0)
+        </div>
+        <div id="badge-right" class="absolute top-2 right-3 text-[11px] font-bold text-purple-400 bg-black/65 px-2 py-0.5 rounded border border-purple-500/30 pointer-events-none">
+          x = 100 cm: Vácuo (ψ = 0)
+        </div>
+      </div>
+
+      <!-- Barra de Contadores de Eventos em Tempo Real (Clicáveis para abrir a Legenda Detalhada) -->
+      <div class="grid grid-cols-2 sm:grid-cols-6 gap-1.5 text-xs proj-text">
+        <div data-glossary="guia" class="legend-chip flex items-center justify-between p-1.5 rounded-lg bg-[var(--card)] border border-[var(--card-border)]" title="Clique para ver detalhes sobre o Nêutron Guia">
+          <div class="flex items-center gap-1.5">
+            <span class="w-2.5 h-2.5 rounded-full bg-pink-500 ring-2 ring-pink-400/50 flex-shrink-0"></span>
+            <span class="font-semibold">Guia (μ) ⓘ</span>
+          </div>
+          <span id="stat-tracked-mu" class="font-mono font-bold tabular-nums text-pink-500">—</span>
+        </div>
+        <div data-glossary="incidente" class="legend-chip flex items-center justify-between p-1.5 rounded-lg bg-[var(--card)] border border-[var(--card-border)]" title="Clique para ver detalhes sobre a Fonte Incidente">
+          <div class="flex items-center gap-1.5">
+            <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 flex-shrink-0"></span>
+            <span>Incidentes ⓘ</span>
+          </div>
+          <span id="stat-inc" class="font-mono font-bold tabular-nums">0</span>
+        </div>
+        <div data-glossary="sext" class="legend-chip flex items-center justify-between p-1.5 rounded-lg bg-[var(--card)] border border-[var(--card-border)]" title="Clique para ver detalhes sobre a Fonte Extrínseca S_ext">
+          <div class="flex items-center gap-1.5">
+            <span class="w-2.5 h-2.5 rounded-full bg-cyan-500 flex-shrink-0"></span>
+            <span>Fonte Extra ⓘ</span>
+          </div>
+          <span id="stat-ext" class="font-mono font-bold tabular-nums">0</span>
+        </div>
+        <div data-glossary="sigs" class="legend-chip flex items-center justify-between p-1.5 rounded-lg bg-[var(--card)] border border-[var(--card-border)]" title="Clique para ver detalhes sobre o Espalhamento Isotrópico">
+          <div class="flex items-center gap-1.5">
+            <span class="w-2.5 h-2.5 rounded-full bg-blue-500 flex-shrink-0"></span>
+            <span>Espalhados ⓘ</span>
+          </div>
+          <span id="stat-scat" class="font-mono font-bold tabular-nums">0</span>
+        </div>
+        <div data-glossary="nusf" class="legend-chip flex items-center justify-between p-1.5 rounded-lg bg-[var(--card)] border border-[var(--card-border)]" title="Clique para ver detalhes sobre a Fissão Nuclear">
+          <div class="flex items-center gap-1.5">
+            <span class="w-2.5 h-2.5 rounded-full bg-amber-500 flex-shrink-0"></span>
+            <span>Fissões ⓘ</span>
+          </div>
+          <span id="stat-fiss" class="font-mono font-bold tabular-nums">0</span>
+        </div>
+        <div data-glossary="siga" class="legend-chip flex items-center justify-between p-1.5 rounded-lg bg-[var(--card)] border border-[var(--card-border)]" title="Clique para ver detalhes sobre Absorção e Fuga">
+          <div class="flex items-center gap-1.5">
+            <span class="w-2.5 h-2.5 rounded-full bg-red-500 flex-shrink-0"></span>
+            <span>Abs. / Fuga ⓘ</span>
+          </div>
+          <span id="stat-abs-leak" class="font-mono font-bold tabular-nums">0 / 0</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= MÓDULO LEGENDA INTERATIVA E GLOSSÁRIO DE SÍMBOLOS ================= -->
+    <section id="mod-legend" class="p-3 rounded-xl bg-[var(--card)] border border-[var(--card-border)] space-y-2.5 text-xs proj-text">
+      <div class="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--card-border)] pb-1.5">
+        <div class="flex items-center gap-2">
+          <span class="font-bold text-sm text-[var(--foreground)]">📖 Legenda Interativa &amp; Glossário do Trabalho</span>
+          <span class="px-2 py-0.5 rounded-full bg-blue-500/15 text-blue-400 border border-blue-500/30 text-[11px] font-medium">
+            Clique em qualquer elemento visual ou símbolo matemático para abrir sua explicação completa!
+          </span>
+        </div>
+      </div>
+
+      <!-- Grupo 1: Elementos Visuais da Placa -->
+      <div class="space-y-1">
+        <div class="text-[11px] font-bold text-[var(--muted-foreground)] uppercase tracking-wider">1. Elementos Visuais na Placa (Cores e Camadas):</div>
+        <div class="flex flex-wrap gap-1.5">
+          <button data-glossary="guia" class="legend-chip active-chip px-2.5 py-1 rounded-lg bg-[var(--background)] border border-[var(--border)] flex items-center gap-1.5 text-xs font-medium">
+            <span class="w-2.5 h-2.5 rounded-full bg-pink-500 ring-2 ring-pink-400/60"></span>
+            <span>Nêutron Guia &amp; Rastro</span>
+          </button>
+          <button data-glossary="incidente" class="legend-chip px-2.5 py-1 rounded-lg bg-[var(--background)] border border-[var(--border)] flex items-center gap-1.5 text-xs font-medium">
+            <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+            <span>Fonte de Contorno (x=0)</span>
+          </button>
+          <button data-glossary="sext" class="legend-chip px-2.5 py-1 rounded-lg bg-[var(--background)] border border-[var(--border)] flex items-center gap-1.5 text-xs font-medium">
+            <span class="w-2.5 h-2.5 rounded-full bg-cyan-500"></span>
+            <span>Fonte Extrínseca (S<sub>ext</sub>)</span>
+          </button>
+          <button data-glossary="sigs" class="legend-chip px-2.5 py-1 rounded-lg bg-[var(--background)] border border-[var(--border)] flex items-center gap-1.5 text-xs font-medium">
+            <span class="w-2.5 h-2.5 rounded-full bg-blue-500"></span>
+            <span>Nêutron Espalhado</span>
+          </button>
+          <button data-glossary="nusf" class="legend-chip px-2.5 py-1 rounded-lg bg-[var(--background)] border border-[var(--border)] flex items-center gap-1.5 text-xs font-medium">
+            <span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
+            <span>Nêutron de Fissão</span>
+          </button>
+          <button data-glossary="siga" class="legend-chip px-2.5 py-1 rounded-lg bg-[var(--background)] border border-[var(--border)] flex items-center gap-1.5 text-xs font-medium">
+            <span class="w-2.5 h-2.5 rounded-full bg-red-500"></span>
+            <span>Flash de Absorção</span>
+          </button>
+          <button data-glossary="phi" class="legend-chip px-2.5 py-1 rounded-lg bg-[var(--background)] border border-[var(--border)] flex items-center gap-1.5 text-xs font-medium">
+            <span class="w-3 h-1 bg-emerald-400 rounded"></span>
+            <span>Curva Tracejada ϕ(x)</span>
+          </button>
+          <button data-glossary="regua" class="legend-chip px-2.5 py-1 rounded-lg bg-[var(--background)] border border-[var(--border)] flex items-center gap-1.5 text-xs font-medium">
+            <span class="w-3 h-1 bg-red-400 rounded"></span>
+            <span>Régua Física (1 cm)</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Grupo 2: Símbolos Matemáticos do Trabalho (Projetos 1 e 2) -->
+      <div class="space-y-1">
+        <div class="text-[11px] font-bold text-[var(--muted-foreground)] uppercase tracking-wider">2. Símbolos Matemáticos dos Relatórios (Clique para ver definição, fórmula e valor atual):</div>
+        <div class="flex flex-wrap gap-1.5">
+          <button data-glossary="psi" class="legend-chip px-2.5 py-1 rounded-lg bg-[var(--background)] border border-[var(--border)] font-mono text-xs font-semibold text-blue-400">
+            ψ(x,μ) e ψₘ(x)
+          </button>
+          <button data-glossary="phi" class="legend-chip px-2.5 py-1 rounded-lg bg-[var(--background)] border border-[var(--border)] font-mono text-xs font-semibold text-emerald-400">
+            ϕ(x) (Fluxo Escalar)
+          </button>
+          <button data-glossary="quad" class="legend-chip px-2.5 py-1 rounded-lg bg-[var(--background)] border border-[var(--border)] font-mono text-xs font-semibold text-purple-400">
+            μₘ e wₘ (Quadratura Sₙ)
+          </button>
+          <button data-glossary="sigt" class="legend-chip px-2.5 py-1 rounded-lg bg-[var(--background)] border border-[var(--border)] font-mono text-xs font-semibold text-teal-400">
+            σₜ(x) (Seção Total)
+          </button>
+          <button data-glossary="sigs" class="legend-chip px-2.5 py-1 rounded-lg bg-[var(--background)] border border-[var(--border)] font-mono text-xs font-semibold text-blue-400">
+            σₛ₀(x) (Espalhamento)
+          </button>
+          <button data-glossary="siga" class="legend-chip px-2.5 py-1 rounded-lg bg-[var(--background)] border border-[var(--border)] font-mono text-xs font-semibold text-red-400">
+            σₐ(x) (Absorção)
+          </button>
+          <button data-glossary="nusf" class="legend-chip px-2.5 py-1 rounded-lg bg-[var(--background)] border border-[var(--border)] font-mono text-xs font-semibold text-amber-400">
+            νσ_f(x) (Produção Fissão)
+          </button>
+          <button data-glossary="keff" class="legend-chip px-2.5 py-1 rounded-lg bg-[var(--background)] border border-[var(--border)] font-mono text-xs font-semibold text-amber-300">
+            k_eff (Fator Efetivo)
+          </button>
+          <button data-glossary="c0" class="legend-chip px-2.5 py-1 rounded-lg bg-[var(--background)] border border-[var(--border)] font-mono text-xs font-semibold text-pink-400">
+            c₀ (Razão de Multiplicação)
+          </button>
+          <button data-glossary="mfp" class="legend-chip px-2.5 py-1 rounded-lg bg-[var(--background)] border border-[var(--border)] font-mono text-xs font-semibold text-rose-400">
+            λ_mfp e s = −ln(ξ)/σₜ
+          </button>
+          <button data-glossary="wdd" class="legend-chip px-2.5 py-1 rounded-lg bg-[var(--background)] border border-[var(--border)] font-mono text-xs font-semibold text-indigo-400">
+            αₘ,ᵢ e βₘ,ᵢ (DD / Step / SC)
+          </button>
+          <button data-glossary="espectro" class="legend-chip px-2.5 py-1 rounded-lg bg-[var(--background)] border border-[var(--border)] font-mono text-xs font-semibold text-cyan-400">
+            Matriz A e Autovalores λₖ
+          </button>
+          <button data-glossary="corrente" class="legend-chip px-2.5 py-1 rounded-lg bg-[var(--background)] border border-[var(--border)] font-mono text-xs font-semibold text-violet-400">
+            J±(x) (Fuga nas Bordas)
+          </button>
+        </div>
+      </div>
+
+      <!-- Painel Interativo de Detalhes do Item Clicado -->
+      <div id="glossary-detail-card" class="p-3 rounded-xl bg-[var(--background)] border-2 border-blue-500/40 space-y-2 transition-all">
+        <div class="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--card-border)] pb-1.5">
+          <div class="flex items-center gap-2">
+            <span id="gl-badge" class="px-2 py-0.5 rounded bg-blue-600 text-white font-bold text-xs">Símbolo Selecionado</span>
+            <h3 id="gl-title" class="font-bold text-sm text-[var(--foreground)]">Nêutron Guia &amp; Livre Caminho Médio</h3>
+          </div>
+          <span id="gl-units" class="font-mono text-[11px] px-2 py-0.5 rounded bg-[var(--card)] border border-[var(--border)] text-emerald-400">
+            Unidade: cm
+          </span>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-12 gap-3 items-center">
+          <!-- Explicação Física e Didática -->
+          <div class="md:col-span-7 space-y-1.5 text-xs leading-relaxed">
+            <p id="gl-desc" class="text-[var(--foreground)]"></p>
+            <div id="gl-live" class="p-2 rounded-lg bg-blue-500/10 border border-blue-500/25 font-mono text-[11px] text-blue-300"></div>
+          </div>
+          <!-- Expressão Matemática Renderizada no Formato do Relatório (MathML Nativo) -->
+          <div class="md:col-span-5 flex flex-col justify-center">
+            <div class="text-[10px] text-[var(--muted-foreground)] uppercase tracking-wider mb-1 font-semibold">Expressão Matemática no Trabalho:</div>
+            <div id="gl-math-box" class="doc-eq-box paper-mode min-h-[74px]">
+              <div id="gl-math" class="doc-eq-center"></div>
+              <span id="gl-eq-num" class="doc-eq-num">(1)</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= MÓDULO 3: FÓRMULAS NO FORMATO DO RELATÓRIO, ESPECTRO E BALANÇO ================= -->
+    <section id="mod-theory" class="p-3 rounded-xl bg-[var(--card)] border border-[var(--card-border)] space-y-3 text-xs proj-text">
+      <div class="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--card-border)] pb-2">
+        <div>
+          <span class="font-bold text-sm text-[var(--foreground)]">📐 Equações e Formulação Matemática (Formato Exato dos Relatórios 1 e 2)</span>
+          <p class="text-[11px] text-[var(--muted-foreground)]">
+            Tipografia matemática idêntica aos documentos LaTeX (<i>Projeto_1_Relatorio.tex</i> e <i>Relatorio_Projeto_Curso_2.tex</i>), sem depender de internet externa.
+          </p>
+        </div>
+
+        <!-- Abas de Fórmulas do Trabalho + Botão Estilo Papel PDF -->
+        <div class="flex flex-wrap items-center gap-1">
+          <button id="btn-paper-eq" class="px-2.5 py-1 rounded-lg bg-slate-100 text-slate-900 border border-slate-300 font-bold text-xs shadow-sm hover:bg-white transition-colors" title="Alternar fundo das equações entre Folha de Artigo (Branco PDF) e Tema Escuro">
+            📄 Fundo Documento (PDF)
+          </button>
+          <button data-ftab="eq_sn" class="formula-tab active px-2.5 py-1 rounded-lg border border-[var(--border)] font-semibold text-xs">
+            1. Eq. de Boltzmann &amp; S<sub>N</sub>
+          </button>
+          <button data-ftab="eq_wdd" class="formula-tab px-2.5 py-1 rounded-lg border border-[var(--border)] font-semibold text-xs">
+            2. Balanço &amp; WDD (DD, Step, SC)
+          </button>
+          <button data-ftab="eq_spec" class="formula-tab px-2.5 py-1 rounded-lg border border-[var(--border)] font-semibold text-xs">
+            3. Espectro S<sub>2</sub>/S<sub>4</sub> &amp; Potências
+          </button>
+          <button data-ftab="eq_mc" class="formula-tab px-2.5 py-1 rounded-lg border border-[var(--border)] font-semibold text-xs">
+            4. Caminho Livre &amp; Fuga
+          </button>
+          <button data-ftab="eq_all" class="formula-tab px-2.5 py-1 rounded-lg border border-[var(--border)] font-semibold text-xs">
+            Ver Todas
+          </button>
+        </div>
+      </div>
+
+      <!-- Conteúdo das Fórmulas Renderizadas em MathML Nativo (Estilo LaTeX / Computer Modern) -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-2.5">
+        
+        <!-- Card 1: Equação de Transporte 1D e Ordenadas Discretas SN -->
+        <div id="fcard-eq_sn" class="fcard p-3 rounded-xl bg-[var(--background)] border border-[var(--border)] space-y-2">
+          <div class="flex items-center justify-between border-b border-[var(--card-border)] pb-1">
+            <span class="font-bold text-blue-400">1. Equação de Transporte de Boltzmann 1D e Ordenadas Discretas (S<sub>N</sub>)</span>
+            <span class="text-[10px] font-mono text-[var(--muted-foreground)]">Seções 1 e 1.1 dos Relatórios</span>
+          </div>
+          <div class="space-y-2">
+            <div class="text-[11px] text-[var(--muted-foreground)]">• <b>Problema de Fonte Fixa (Projeto 1, Eq. 1) e Problema de Criticidade / Autovalor (Projeto 2, Eq. 1):</b></div>
+            
+            <!-- Equação (1) exata da imagem do documento -->
+            <div class="doc-eq-box paper-mode">
+              <div class="doc-eq-center">
+                <math display="block">
+                  <mrow>
+                    <mi>μ</mi>
+                    <mfrac>
+                      <mrow><mo>∂</mo><mi>ψ</mi><mo>(</mo><mi>x</mi><mo>,</mo><mi>μ</mi><mo>)</mo></mrow>
+                      <mrow><mo>∂</mo><mi>x</mi></mrow>
+                    </mfrac>
+                    <mo>+</mo>
+                    <msub><mi>σ</mi><mi>t</mi></msub><mo>(</mo><mi>x</mi><mo>)</mo><mi>ψ</mi><mo>(</mo><mi>x</mi><mo>,</mo><mi>μ</mi><mo>)</mo>
+                    <mo>=</mo>
+                    <mfrac>
+                      <mrow><msub><mi>σ</mi><mrow><mi>s</mi><mn>0</mn></mrow></msub><mo>(</mo><mi>x</mi><mo>)</mo></mrow>
+                      <mn>2</mn>
+                    </mfrac>
+                    <msubsup><mo>∫</mo><mrow><mo>−</mo><mn>1</mn></mrow><mn>1</mn></msubsup>
+                    <mi>ψ</mi><mo>(</mo><mi>x</mi><mo>,</mo><msup><mi>μ</mi><mo>′</mo></msup><mo>)</mo><mi>d</mi><msup><mi>μ</mi><mo>′</mo></msup>
+                    <mo>+</mo>
+                    <msub><mi>S</mi><mrow><mi>e</mi><mi>x</mi><mi>t</mi></mrow></msub><mo>(</mo><mi>x</mi><mo>)</mo>
+                  </mrow>
+                </math>
+              </div>
+              <span class="doc-eq-num">(1)</span>
+            </div>
+
+            <!-- Equação (2): Com termo de fissão (Projeto 2) e Quadratura SN -->
+            <div class="text-[11px] text-[var(--muted-foreground)]">• <b>Meio Multiplicador com Fissão (<i>k<sub>eff</sub></i>) e Quadratura de Gauss-Legendre (<i>S<sub>N</sub></i>):</b></div>
+            <div class="doc-eq-box paper-mode">
+              <div class="doc-eq-center">
+                <math display="block">
+                  <mrow>
+                    <msub><mi>μ</mi><mi>m</mi></msub>
+                    <mfrac>
+                      <mrow><mi>d</mi><msub><mi>ψ</mi><mi>m</mi></msub><mo>(</mo><mi>x</mi><mo>)</mo></mrow>
+                      <mrow><mi>d</mi><mi>x</mi></mrow>
+                    </mfrac>
+                    <mo>+</mo>
+                    <msub><mi>σ</mi><mi>t</mi></msub><mo>(</mo><mi>x</mi><mo>)</mo><msub><mi>ψ</mi><mi>m</mi></msub><mo>(</mo><mi>x</mi><mo>)</mo>
+                    <mo>=</mo>
+                    <mrow><mo>[</mo>
+                      <msub><mi>σ</mi><mrow><mi>s</mi><mn>0</mn></mrow></msub><mo>(</mo><mi>x</mi><mo>)</mo>
+                      <mo>+</mo>
+                      <mfrac>
+                        <mrow><mi>ν</mi><msub><mi>σ</mi><mi>f</mi></msub><mo>(</mo><mi>x</mi><mo>)</mo></mrow>
+                        <msub><mi>k</mi><mrow><mi>e</mi><mi>f</mi><mi>f</mi></mrow></msub>
+                      </mfrac>
+                    <mo>]</mo></mrow>
+                    <mi>ϕ</mi><mo>(</mo><mi>x</mi><mo>)</mo>
+                    <mo>+</mo>
+                    <msub><mi>S</mi><mrow><mi>e</mi><mi>x</mi><mi>t</mi></mrow></msub><mo>(</mo><mi>x</mi><mo>)</mo>
+                    <mo>,</mo><mspace width="1.2em"></mspace>
+                    <mi>ϕ</mi><mo>(</mo><mi>x</mi><mo>)</mo>
+                    <mo>≈</mo>
+                    <mfrac><mn>1</mn><mn>2</mn></mfrac>
+                    <munderover><mo>∑</mo><mrow><mi>m</mi><mo>=</mo><mn>1</mn></mrow><mi>N</mi></munderover>
+                    <msub><mi>ω</mi><mi>m</mi></msub><msub><mi>ψ</mi><mi>m</mi></msub><mo>(</mo><mi>x</mi><mo>)</mo>
+                  </mrow>
+                </math>
+              </div>
+              <span class="doc-eq-num">(2)</span>
+            </div>
+
+            <div class="flex flex-wrap items-center gap-1 pt-0.5 text-[11px]">
+              <span class="text-[var(--muted-foreground)]">Clique no símbolo para ver detalhes:</span>
+              <button data-glossary="psi" class="legend-chip px-1.5 py-0.5 rounded bg-[var(--card)] border border-[var(--border)] font-mono text-blue-400">ψ(x,μ)</button>
+              <button data-glossary="phi" class="legend-chip px-1.5 py-0.5 rounded bg-[var(--card)] border border-[var(--border)] font-mono text-emerald-400">ϕ(x)</button>
+              <button data-glossary="quad" class="legend-chip px-1.5 py-0.5 rounded bg-[var(--card)] border border-[var(--border)] font-mono text-purple-400">μₘ, ωₘ</button>
+              <button data-glossary="keff" class="legend-chip px-1.5 py-0.5 rounded bg-[var(--card)] border border-[var(--border)] font-mono text-amber-400">k_eff</button>
+              <button data-glossary="sext" class="legend-chip px-1.5 py-0.5 rounded bg-[var(--card)] border border-[var(--border)] font-mono text-cyan-400">S_ext(x)</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card 2: Discretização Espacial e Formulação Unificada WDD (DD, Step, SC) -->
+        <div id="fcard-eq_wdd" class="fcard hidden p-3 rounded-xl bg-[var(--background)] border border-[var(--border)] space-y-2">
+          <div class="flex items-center justify-between border-b border-[var(--card-border)] pb-1">
+            <span class="font-bold text-indigo-400">2. Equação de Balanço Celular e Família WDD (DD, Step e SC)</span>
+            <span class="text-[10px] font-mono text-[var(--muted-foreground)]">Seções 1.2 e 1.3 dos Relatórios</span>
+          </div>
+          <div class="space-y-2">
+            <div class="text-[11px] text-[var(--muted-foreground)]">• <b>Equação de Balanço de Ordem Zero na Célula <i>i</i> e Espessura Óptica <i>α<sub>m,i</sub><sup>x</sup></i> (Eq. 5 e 6):</b></div>
+            <div class="doc-eq-box paper-mode">
+              <div class="doc-eq-center">
+                <math display="block">
+                  <mrow>
+                    <mfrac>
+                      <mrow><msub><mi>ψ</mi><mrow><mi>m</mi><mo>,</mo><mi>i</mi><mo>+</mo><mn>1</mn><mo>/</mo><mn>2</mn></mrow></msub><mo>−</mo><msub><mi>ψ</mi><mrow><mi>m</mi><mo>,</mo><mi>i</mi><mo>−</mo><mn>1</mn><mo>/</mo><mn>2</mn></mrow></msub></mrow>
+                      <msubsup><mi>α</mi><mrow><mi>m</mi><mo>,</mo><mi>i</mi></mrow><mi>x</mi></msubsup>
+                    </mfrac>
+                    <mo>+</mo>
+                    <msub><mi>ψ</mi><mrow><mi>m</mi><mo>,</mo><mi>i</mi></mrow></msub>
+                    <mo>=</mo>
+                    <msub><mi>S</mi><mrow><mi>t</mi><mi>o</mi><mi>t</mi><mi>a</mi><mi>l</mi><mo>,</mo><mi>i</mi></mrow></msub>
+                    <mo>,</mo><mspace width="1.1em"></mspace>
+                    <msubsup><mi>α</mi><mrow><mi>m</mi><mo>,</mo><mi>i</mi></mrow><mi>x</mi></msubsup>
+                    <mo>≡</mo>
+                    <mfrac>
+                      <mrow><msub><mi>h</mi><mi>i</mi></msub><msub><mi>σ</mi><mrow><mi>t</mi><mo>,</mo><mi>i</mi></mrow></msub></mrow>
+                      <msub><mi>μ</mi><mi>m</mi></msub>
+                    </mfrac>
+                    <mo>,</mo><mspace width="1.1em"></mspace>
+                    <msub><mi>S</mi><mrow><mi>t</mi><mi>o</mi><mi>t</mi><mi>a</mi><mi>l</mi><mo>,</mo><mi>i</mi></mrow></msub>
+                    <mo>≡</mo>
+                    <mfrac>
+                      <msub><mi>Q</mi><mrow><mi>m</mi><mo>,</mo><mi>i</mi></mrow></msub>
+                      <msub><mi>σ</mi><mrow><mi>t</mi><mo>,</mo><mi>i</mi></mrow></msub>
+                    </mfrac>
+                  </mrow>
+                </math>
+              </div>
+              <span class="doc-eq-num">(3)</span>
+            </div>
+
+            <div class="text-[11px] text-[var(--muted-foreground)]">• <b>Formulação Unificada WDD em Caixa (Eq. 7 do Relatório 1) e Parâmetro <i>β<sub>m,i</sub></i> (Eq. 8):</b></div>
+            <div class="doc-eq-box paper-mode">
+              <div class="doc-eq-center">
+                <div class="wdd-boxed">
+                  <math display="block">
+                    <mrow>
+                      <mo>{</mo>
+                      <mtable columnalign="left" rowspacing="0.55em">
+                        <mtr>
+                          <mtd>
+                            <msub><mi>ψ</mi><mrow><mi>m</mi><mo>,</mo><mi>i</mi></mrow></msub>
+                            <mo>=</mo>
+                            <mfrac>
+                              <mrow>
+                                <mn>2</mn><msub><mi>ψ</mi><mrow><mi>i</mi><mi>n</mi></mrow></msub>
+                                <mo>+</mo>
+                                <mo>(</mo><mn>1</mn><mo>+</mo><msub><mi>β</mi><mrow><mi>m</mi><mo>,</mo><mi>i</mi></mrow></msub><mo>)</mo>
+                                <mo>|</mo><msubsup><mi>α</mi><mrow><mi>m</mi><mo>,</mo><mi>i</mi></mrow><mi>x</mi></msubsup><mo>|</mo>
+                                <msub><mi>S</mi><mrow><mi>t</mi><mi>o</mi><mi>t</mi><mi>a</mi><mi>l</mi><mo>,</mo><mi>i</mi></mrow></msub>
+                              </mrow>
+                              <mrow>
+                                <mn>2</mn>
+                                <mo>+</mo>
+                                <mo>(</mo><mn>1</mn><mo>+</mo><msub><mi>β</mi><mrow><mi>m</mi><mo>,</mo><mi>i</mi></mrow></msub><mo>)</mo>
+                                <mo>|</mo><msubsup><mi>α</mi><mrow><mi>m</mi><mo>,</mo><mi>i</mi></mrow><mi>x</mi></msubsup><mo>|</mo>
+                              </mrow>
+                            </mfrac>
+                          </mtd>
+                        </mtr>
+                        <mtr>
+                          <mtd>
+                            <msub><mi>ψ</mi><mrow><mi>o</mi><mi>u</mi><mi>t</mi></mrow></msub>
+                            <mo>=</mo>
+                            <mfrac>
+                              <mrow>
+                                <mn>2</mn><msub><mi>ψ</mi><mrow><mi>m</mi><mo>,</mo><mi>i</mi></mrow></msub>
+                                <mo>−</mo>
+                                <mo>(</mo><mn>1</mn><mo>−</mo><msub><mi>β</mi><mrow><mi>m</mi><mo>,</mo><mi>i</mi></mrow></msub><mo>)</mo><msub><mi>ψ</mi><mrow><mi>i</mi><mi>n</mi></mrow></msub>
+                              </mrow>
+                              <mrow><mn>1</mn><mo>+</mo><msub><mi>β</mi><mrow><mi>m</mi><mo>,</mo><mi>i</mi></mrow></msub></mrow>
+                            </mfrac>
+                          </mtd>
+                        </mtr>
+                      </mtable>
+                    </mrow>
+                  </math>
+                </div>
+                <math display="block" style="margin-left: 0.75rem;">
+                  <mrow>
+                    <msub><mi>β</mi><mrow><mi>m</mi><mo>,</mo><mi>i</mi></mrow></msub><mo>=</mo>
+                    <mrow><mo>{</mo>
+                      <mtable columnalign="left" rowspacing="0.25em">
+                        <mtr><mtd><mn>0</mn><mspace width="0.5em"></mspace><mtext>(DD)</mtext></mtd></mtr>
+                        <mtr><mtd><mn>1</mn><mspace width="0.5em"></mspace><mtext>(Step)</mtext></mtd></mtr>
+                        <mtr>
+                          <mtd>
+                            <mi>coth</mi><mrow><mo>(</mo><mfrac><mrow><mo>|</mo><msubsup><mi>α</mi><mrow><mi>m</mi><mo>,</mo><mi>i</mi></mrow><mi>x</mi></msubsup><mo>|</mo></mrow><mn>2</mn></mfrac><mo>)</mo></mrow>
+                            <mo>−</mo>
+                            <mfrac><mn>2</mn><mrow><mo>|</mo><msubsup><mi>α</mi><mrow><mi>m</mi><mo>,</mo><mi>i</mi></mrow><mi>x</mi></msubsup><mo>|</mo></mrow></mfrac>
+                            <mspace width="0.4em"></mspace><mtext>(SC)</mtext>
+                          </mtd>
+                        </mtr>
+                      </mtable>
+                    </mrow>
+                  </mrow>
+                </math>
+              </div>
+              <span class="doc-eq-num">(4)</span>
+            </div>
+
+            <div class="flex flex-wrap items-center gap-1 pt-0.5 text-[11px]">
+              <span class="text-[var(--muted-foreground)]">Clique no símbolo para ver detalhes:</span>
+              <button data-glossary="wdd" class="legend-chip px-1.5 py-0.5 rounded bg-[var(--card)] border border-[var(--border)] font-mono text-indigo-400">αₘ,ᵢ e βₘ,ᵢ (DD/Step/SC)</button>
+              <button data-glossary="sigt" class="legend-chip px-1.5 py-0.5 rounded bg-[var(--card)] border border-[var(--border)] font-mono text-teal-400">σₜ,ᵢ</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card 3: Espectro da Matriz A, Autovalores S2 e Método das Potências -->
+        <div id="fcard-eq_spec" class="fcard hidden p-3 rounded-xl bg-[var(--background)] border border-[var(--border)] space-y-2">
+          <div class="flex items-center justify-between border-b border-[var(--card-border)] pb-1">
+            <span class="font-bold text-amber-400">3. Análise Espectral (S<sub>2</sub>/S<sub>4</sub>), Lei de Fick e Método das Potências</span>
+            <span class="text-[10px] font-mono text-[var(--muted-foreground)]">Seção 2.2 (Proj. 1) e Seção 1.4 (Proj. 2)</span>
+          </div>
+          <div class="space-y-2">
+            <div class="text-[11px] text-[var(--muted-foreground)]">• <b>Sistema Espectral Homogêneo e Autovalores Analíticos <i>S<sub>2</sub></i>:</b></div>
+            <div class="doc-eq-box paper-mode">
+              <div class="doc-eq-center">
+                <math display="block">
+                  <mrow>
+                    <mfrac>
+                      <mrow><mi>d</mi><mi mathvariant="bold">Ψ</mi><mo>(</mo><mi>x</mi><mo>)</mo></mrow>
+                      <mrow><mi>d</mi><mi>x</mi></mrow>
+                    </mfrac>
+                    <mo>=</mo>
+                    <mo>−</mo><msub><mi>σ</mi><mi>t</mi></msub><mi mathvariant="bold">A</mi><mi mathvariant="bold">Ψ</mi><mo>(</mo><mi>x</mi><mo>)</mo>
+                    <mo>,</mo><mspace width="1.1em"></mspace>
+                    <msub><mi>A</mi><mrow><mi>m</mi><mo>,</mo><mi>n</mi></mrow></msub>
+                    <mo>=</mo>
+                    <mfrac><mn>1</mn><msub><mi>μ</mi><mi>m</mi></msub></mfrac>
+                    <mrow><mo>(</mo>
+                      <msub><mi>δ</mi><mrow><mi>m</mi><mo>,</mo><mi>n</mi></mrow></msub>
+                      <mo>−</mo>
+                      <mfrac><msub><mi>c</mi><mn>0</mn></msub><mn>2</mn></mfrac><msub><mi>ω</mi><mi>n</mi></msub>
+                    <mo>)</mo></mrow>
+                    <mo>,</mo><mspace width="1.1em"></mspace>
+                    <msub><mi>λ</mi><mrow><mn>1</mn><mo>,</mo><mn>2</mn></mrow></msub>
+                    <mo>=</mo>
+                    <mo>±</mo><msub><mi>σ</mi><mi>t</mi></msub>
+                    <msqrt><mrow><mn>3</mn><mo>(</mo><mn>1</mn><mo>−</mo><msub><mi>c</mi><mn>0</mn></msub><mo>)</mo></mrow></msqrt>
+                  </mrow>
+                </math>
+              </div>
+              <span class="doc-eq-num">(5)</span>
+            </div>
+
+            <div class="text-[11px] text-[var(--muted-foreground)]">• <b>Atualização do Autovalor <i>k<sub>eff</sub></i> no Método das Potências (Projeto 2, Eq. 12):</b></div>
+            <div class="doc-eq-box paper-mode">
+              <div class="doc-eq-center">
+                <math display="block">
+                  <mrow>
+                    <msup><mi>P</mi><mrow><mo>(</mo><mi>ℓ</mi><mo>)</mo></mrow></msup>
+                    <mo>=</mo>
+                    <munderover><mo>∑</mo><mrow><mi>i</mi><mo>=</mo><mn>1</mn></mrow><mi>I</mi></munderover>
+                    <mi>ν</mi><msub><mi>σ</mi><mrow><mi>f</mi><mo>,</mo><mi>i</mi></mrow></msub>
+                    <msubsup><mi>ϕ</mi><mi>i</mi><mrow><mo>(</mo><mi>ℓ</mi><mo>)</mo></mrow></msubsup>
+                    <msub><mi>h</mi><mi>i</mi></msub>
+                    <mspace width="0.8em"></mspace><mo>⟹</mo><mspace width="0.8em"></mspace>
+                    <msubsup><mi>k</mi><mrow><mi>e</mi><mi>f</mi><mi>f</mi></mrow><mrow><mo>(</mo><mi>ℓ</mi><mo>)</mo></mrow></msubsup>
+                    <mo>=</mo>
+                    <msubsup><mi>k</mi><mrow><mi>e</mi><mi>f</mi><mi>f</mi></mrow><mrow><mo>(</mo><mi>ℓ</mi><mo>−</mo><mn>1</mn><mo>)</mo></mrow></msubsup>
+                    <mo>⋅</mo>
+                    <msup><mi>P</mi><mrow><mo>(</mo><mi>ℓ</mi><mo>)</mo></mrow></msup>
+                    <mo>,</mo><mspace width="1.1em"></mspace>
+                    <msub><mi>c</mi><mn>0</mn></msub>
+                    <mo>=</mo>
+                    <mfrac>
+                      <mrow><msub><mi>σ</mi><mrow><mi>s</mi><mn>0</mn></mrow></msub><mo>+</mo><mi>ν</mi><msub><mi>σ</mi><mi>f</mi></msub><mo>/</mo><msub><mi>k</mi><mrow><mi>e</mi><mi>f</mi><mi>f</mi></mrow></msub></mrow>
+                      <msub><mi>σ</mi><mi>t</mi></msub>
+                    </mfrac>
+                  </mrow>
+                </math>
+              </div>
+              <span class="doc-eq-num">(6)</span>
+            </div>
+
+            <div class="flex flex-wrap items-center gap-1 pt-0.5 text-[11px]">
+              <span class="text-[var(--muted-foreground)]">Clique no símbolo para ver detalhes:</span>
+              <button data-glossary="c0" class="legend-chip px-1.5 py-0.5 rounded bg-[var(--card)] border border-[var(--border)] font-mono text-pink-400">c₀</button>
+              <button data-glossary="espectro" class="legend-chip px-1.5 py-0.5 rounded bg-[var(--card)] border border-[var(--border)] font-mono text-cyan-400">Matriz A e λₖ</button>
+              <button data-glossary="keff" class="legend-chip px-1.5 py-0.5 rounded bg-[var(--card)] border border-[var(--border)] font-mono text-amber-400">k_eff</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card 4: Lei de Beer-Lambert (Monte Carlo) e Correntes Parciais de Fuga -->
+        <div id="fcard-eq_mc" class="fcard hidden p-3 rounded-xl bg-[var(--background)] border border-[var(--border)] space-y-2">
+          <div class="flex items-center justify-between border-b border-[var(--card-border)] pb-1">
+            <span class="font-bold text-emerald-400">4. Sorteio do Caminho Livre (Beer-Lambert) &amp; Correntes de Fuga</span>
+            <span class="text-[10px] font-mono text-[var(--muted-foreground)]">Escala Física Real &amp; Conservação</span>
+          </div>
+          <div class="space-y-2">
+            <div class="text-[11px] text-[var(--muted-foreground)]">• <b>Distribuição Exponencial de Voo Livre e Sorteio por Inversão Acumulada:</b></div>
+            <div class="doc-eq-box paper-mode">
+              <div class="doc-eq-center">
+                <math display="block">
+                  <mrow>
+                    <mi>P</mi><mo>(</mo><mi>s</mi><mo>)</mo><mo>=</mo><msub><mi>σ</mi><mi>t</mi></msub><msup><mi>e</mi><mrow><mo>−</mo><msub><mi>σ</mi><mi>t</mi></msub><mi>s</mi></mrow></msup>
+                    <mspace width="0.8em"></mspace><mo>⟹</mo><mspace width="0.8em"></mspace>
+                    <mi>s</mi><mo>=</mo>
+                    <mfrac>
+                      <mrow><mo>−</mo><mi>ln</mi><mo>(</mo><mi>ξ</mi><mo>)</mo></mrow>
+                      <mrow><msub><mi>σ</mi><mi>t</mi></msub><mo>(</mo><mi>x</mi><mo>)</mo></mrow>
+                    </mfrac>
+                    <mo>,</mo><mspace width="1.2em"></mspace>
+                    <mo>⟨</mo><mi>s</mi><mo>⟩</mo><mo>=</mo><msub><mi>λ</mi><mrow><mi>m</mi><mi>f</mi><mi>p</mi></mrow></msub><mo>=</mo>
+                    <mfrac><mn>1</mn><msub><mi>σ</mi><mi>t</mi></msub></mfrac>
+                  </mrow>
+                </math>
+              </div>
+              <span class="doc-eq-num">(7)</span>
+            </div>
+
+            <div class="text-[11px] text-[var(--muted-foreground)]">• <b>Correntes Parciais de Fuga nas Fronteiras <i>J<sup>+</sup>(L)</i> e <i>J<sup>−</sup>(0)</i>:</b></div>
+            <div class="doc-eq-box paper-mode">
+              <div class="doc-eq-center">
+                <math display="block">
+                  <mrow>
+                    <msup><mi>J</mi><mo>+</mo></msup><mo>(</mo><mi>L</mi><mo>)</mo>
+                    <mo>=</mo>
+                    <munder><mo>∑</mo><mrow><msub><mi>μ</mi><mi>m</mi></msub><mo>&gt;</mo><mn>0</mn></mrow></munder>
+                    <msub><mi>μ</mi><mi>m</mi></msub><msub><mi>ω</mi><mi>m</mi></msub><msub><mi>ψ</mi><mi>m</mi></msub><mo>(</mo><mi>L</mi><mo>)</mo>
+                    <mo>,</mo><mspace width="1.5em"></mspace>
+                    <msup><mi>J</mi><mo>−</mo></msup><mo>(</mo><mn>0</mn><mo>)</mo>
+                    <mo>=</mo>
+                    <munder><mo>∑</mo><mrow><msub><mi>μ</mi><mi>m</mi></msub><mo>&lt;</mo><mn>0</mn></mrow></munder>
+                    <mo>|</mo><msub><mi>μ</mi><mi>m</mi></msub><mo>|</mo><msub><mi>ω</mi><mi>m</mi></msub><msub><mi>ψ</mi><mi>m</mi></msub><mo>(</mo><mn>0</mn><mo>)</mo>
+                  </mrow>
+                </math>
+              </div>
+              <span class="doc-eq-num">(8)</span>
+            </div>
+
+            <div class="flex flex-wrap items-center gap-1 pt-0.5 text-[11px]">
+              <span class="text-[var(--muted-foreground)]">Clique no símbolo para ver detalhes:</span>
+              <button data-glossary="mfp" class="legend-chip px-1.5 py-0.5 rounded bg-[var(--card)] border border-[var(--border)] font-mono text-rose-400">s = −ln(ξ)/σₜ</button>
+              <button data-glossary="corrente" class="legend-chip px-1.5 py-0.5 rounded bg-[var(--card)] border border-[var(--border)] font-mono text-violet-400">J⁺(L) e J⁻(0)</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Painel Numérico Ao Vivo (Sempre Visível ao lado da aba ativa) -->
+        <div class="p-3 rounded-xl bg-[var(--background)] border border-[var(--border)] flex flex-col justify-between space-y-2">
+          <div class="font-bold text-sm text-[var(--foreground)] border-b border-[var(--card-border)] pb-1 flex items-center justify-between">
+            <span>⚡ Diagnóstico Espectral &amp; Balanço em Tempo Real</span>
+            <span class="text-[10px] font-mono text-emerald-400">Atualizado com os Sliders</span>
+          </div>
+          <div id="spectral-box" class="space-y-1.5 text-xs leading-relaxed text-[var(--muted-foreground)]">
+          </div>
+          <div id="balance-box" class="grid grid-cols-2 sm:grid-cols-4 gap-1.5 font-mono text-[11px] pt-1">
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ================= MÓDULO 2: GRÁFICOS QUANTITATIVOS S_N EM TEMPO REAL ================= -->
+    <section id="mod-charts" class="p-3 rounded-xl bg-[var(--card)] border border-[var(--card-border)] space-y-2 text-xs proj-text">
+      <div class="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--card-border)] pb-2">
+        <div class="flex items-center gap-2">
+          <span class="font-bold text-sm text-[var(--foreground)]">📈 Solução Determinística em Tempo Real (<i>S<sub>N</sub></i>)</span>
+          <span id="chart-keff-badge" class="px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 font-mono text-[11px]">
+            Malha: I = 50 células
+          </span>
+        </div>
+
+        <div class="flex flex-wrap items-center gap-2">
+          <label class="flex items-center gap-1">
+            <span class="text-[var(--muted-foreground)]">Visualizar:</span>
+            <select id="select-chart-type" class="px-2 py-0.5 rounded border border-[var(--border)] font-medium">
+              <option value="scalar_methods">Fluxo Escalar ϕ(x): Comparar DD vs. Step vs. SC</option>
+              <option value="angular_psi">Fluxos Angulares Direcionais ψₘ(x)</option>
+              <option value="s2_vs_s4">Comparação de Quadratura: S₂ vs. S₄ (SC)</option>
+            </select>
+          </label>
+
+          <label class="flex items-center gap-1">
+            <span class="text-[var(--muted-foreground)]">Ordem:</span>
+            <select id="select-sn-order" class="px-2 py-0.5 rounded border border-[var(--border)] font-mono font-bold">
+              <option value="2">S₂ (2 direções)</option>
+              <option value="4" selected>S₄ (4 direções)</option>
+            </select>
+          </label>
+
+          <label class="flex items-center gap-1">
+            <span class="text-[var(--muted-foreground)]">Malha (I):</span>
+            <select id="select-mesh-cells" class="px-2 py-0.5 rounded border border-[var(--border)] font-mono">
+              <option value="5">5 células (Grossa - testa oscilação DD)</option>
+              <option value="10">10 células</option>
+              <option value="25">25 células</option>
+              <option value="50" selected>50 células (Fina)</option>
+              <option value="100">100 células (Referência)</option>
+            </select>
+          </label>
+        </div>
+      </div>
+
+      <div class="relative w-full">
+        <canvas id="chartCanvas" height="210"></canvas>
+      </div>
+
+      <div id="chart-table-summary" class="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1 font-mono text-[11px]">
+      </div>
+    </section>
+
+    <!-- Rodapé Didático Resumido -->
+    <footer id="info-box" class="p-2.5 rounded-xl bg-blue-500/10 border border-blue-500/25 text-xs leading-relaxed text-[var(--muted-foreground)] proj-text">
+    </footer>
+
+    <!-- Assinatura Institucional & Marca NERY Soluções -->
+    <div class="flex flex-wrap items-center justify-between gap-2 px-3.5 py-2 rounded-xl bg-[var(--card)] border border-[var(--card-border)] text-xs">
+      <div class="flex flex-wrap items-center gap-2">
+        <span class="px-2 py-0.5 rounded bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-extrabold text-[11px] tracking-wide uppercase">
+          NERY Soluções
+        </span>
+        <span class="text-[var(--foreground)] font-semibold">
+          LabSN 1D — Plataforma Interativa de Transporte de Partículas (S<sub>2</sub> / S<sub>4</sub> &amp; Monte Carlo)
+        </span>
+        <span class="text-[var(--muted-foreground)] hidden sm:inline">
+          • Autor: Radival da Costa Nery Júnior (Doutorado PPGMC/UESC)
+        </span>
+      </div>
+      <div class="flex items-center gap-2">
+        <button id="btn-download-app" class="px-2.5 py-1 rounded-lg bg-blue-600/15 hover:bg-blue-600/25 text-blue-400 border border-blue-500/30 font-semibold text-[11px] transition-colors" title="Baixar uma cópia pronta deste aplicativo para enviar por WhatsApp, E-mail ou publicar na web">
+          📤 Baixar App (.html) para Compartilhar
+        </button>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    // =========================================================================
+    // 1. QUADRATURAS DE GAUSS-LEGENDRE (S2 e S4) E SOLVER DETERMINÍSTICO SN
+    // =========================================================================
+    const QUADS = {
+      2: {
+        mu: [-0.5773502691896257, 0.5773502691896257],
+        w:  [1.0, 1.0]
+      },
+      4: {
+        mu: [-0.8611363115940526, -0.3399810435848563, 0.3399810435848563, 0.8611363115940526],
+        w:  [0.3478548451374538,  0.6521451548625461, 0.6521451548625461, 0.3478548451374538]
+      }
+    };
+
+    const S4_ANGLES = [
+      Math.acos(0.861136), -Math.acos(0.861136),
+      Math.acos(0.339981), -Math.acos(0.339981),
+      Math.acos(-0.339981), -Math.acos(-0.339981),
+      Math.acos(-0.861136), -Math.acos(-0.861136)
+    ];
+
+    function calcBeta(method, alpha) {
+      if (method === 'DD') return 0.0;
+      if (method === 'STEP') return 1.0;
+      if (alpha < 1e-4) return alpha / 6.0;
+      return 1.0 / Math.tanh(alpha / 2.0) - 2.0 / alpha;
+    }
+
+    const config = {
+      L: 50,
+      geomMode: 'three_abc',
+      keff: 1.00,
+      bcLeft: 'reflective',
+      bcRight: 'vacuum',
+      lockSum: true,
+      trackEnabled: true,
+      showFlux: true,
+      showSnRays: false,
+      snOrder: 4,
+      meshCells: 50,
+      chartType: 'scalar_methods',
+      regions: [
+        { name: 'Região A', sigt: 1.00, sigs: 0.99, siga: 0.01, nusf: 0.00, sext: 2.0 },
+        { name: 'Região B', sigt: 0.60, sigs: 0.40, siga: 0.20, nusf: 0.00, sext: 0.0 },
+        { name: 'Região C', sigt: 1.00, sigs: 0.90, siga: 0.10, nusf: 0.00, sext: 0.0 }
+      ]
+    };
+
+    const modulesVisible = {
+      controls: true,
+      legend: true,
+      theory: true,
+      charts: true,
+      diagram: false
+    };
+    let activeGlossaryKey = 'guia';
+
+    // Estado de Zoom e Câmera em Coordenadas Físicas (cm)
+    const camera = {
+      zoom: 1.0,
+      centerX_cm: 25.0, // Centro da janela visível em cm
+      followTracked: true,
+      isDragging: false,
+      dragStartX_px: 0,
+      dragStartCenter_cm: 25.0
+    };
+
+    let isRunning = true;
+    let simSpeed = 1.0;
+    let activeRegionIdx = 0;
+    let particles = [];
+    let effects = []; // Coordenadas físicas { x_cm, y_frac, radius_px, alpha, type }
+    let trackedParticle = null;
+    let lastTrackedGhostTrail = [];
+    let lastTrackedOutcome = '';
+    const MAX_PARTICLES = 150;
+
+    let stats = { inc: 0, ext: 0, scat: 0, fiss: 0, abs: 0, leak: 0 };
+    let cachedSolutions = null;
+
+    // =========================================================================
+    // 2. MAPEAMENTO DE ZONAS E PROPRIEDADES MATERIAIS
+    // =========================================================================
+    function getSpatialZones() {
+      if (config.geomMode === 'single') {
+        return [{ start: 0.0, end: 1.0, regIdx: 0, label: 'Placa Homogênea' }];
+      } else if (config.geomMode === 'three_abc') {
+        return [
+          { start: 0.0, end: 0.20, regIdx: 0, label: 'Região A (0–20%)' },
+          { start: 0.20, end: 0.80, regIdx: 1, label: 'Região B (20–80%)' },
+          { start: 0.80, end: 1.00, regIdx: 2, label: 'Região C (80–100%)' }
+        ];
+      } else {
+        return [
+          { start: 0.00, end: 0.20, regIdx: 0, label: 'Refletor' },
+          { start: 0.20, end: 0.40, regIdx: 1, label: 'Fuel 2' },
+          { start: 0.40, end: 0.60, regIdx: 2, label: 'Fuel 1 (Centro)' },
+          { start: 0.60, end: 0.80, regIdx: 1, label: 'Fuel 2' },
+          { start: 0.80, end: 1.00, regIdx: 0, label: 'Refletor' }
+        ];
+      }
+    }
+
+    function getMaterialAtXi(xi) {
+      const clampedXi = Math.max(0.0, Math.min(1.0, xi));
+      const zones = getSpatialZones();
+      for (let z of zones) {
+        if (clampedXi >= z.start && clampedXi <= z.end + 1e-6) {
+          const r = config.regions[z.regIdx];
+          const sigt = Math.max(0.01, r.sigs + r.siga);
+          const effNusf = r.nusf / config.keff;
+          const c0 = (r.sigs + effNusf) / sigt;
+          return { ...r, sigt, effNusf, c0, zoneLabel: z.label, regIdx: z.regIdx };
+        }
+      }
+      const r = config.regions[0];
+      const sigt = Math.max(0.01, r.sigs + r.siga);
+      const effNusf = r.nusf / config.keff;
+      return { ...r, sigt, effNusf, c0: (r.sigs + effNusf) / sigt, zoneLabel: 'Placa', regIdx: 0 };
+    }
+
+    // =========================================================================
+    // 3. SOLVER DETERMINÍSTICO UNIFICADO (FONTE FIXA E AUTOVALOR k_eff)
+    // =========================================================================
+    function solveSNSystem(N, I, method) {
+      const quad = QUADS[N];
+      const mu = quad.mu;
+      const w = quad.w;
+      const halfN = N / 2;
+      const h = config.L / I;
+
+      const sigt = new Float64Array(I);
+      const sigs = new Float64Array(I);
+      const nusf = new Float64Array(I);
+      const sext = new Float64Array(I);
+
+      for (let i = 0; i < I; i++) {
+        const xi = (i + 0.5) / I;
+        const mat = getMaterialAtXi(xi);
+        sigt[i] = mat.sigt;
+        sigs[i] = mat.sigs;
+        nusf[i] = mat.nusf;
+        sext[i] = mat.sext;
+      }
+
+      const hasFixedSource = (config.bcLeft === 'isotropic') || sext.some(s => s > 0);
+      const hasFission = nusf.some(f => f > 0);
+
+      let phi = new Float64Array(I).fill(1.0);
+      const psiAvg = Array.from({ length: N }, () => new Float64Array(I));
+      const psiEdge = Array.from({ length: N }, () => new Float64Array(I + 1));
+
+      let keffCalc = config.keff;
+      const maxIter = 120;
+
+      for (let iter = 0; iter < maxIter; iter++) {
+        const phiOld = Float64Array.from(phi);
+
+        for (let m = halfN; m < N; m++) {
+          const mu_m = mu[m];
+          if (config.bcLeft === 'isotropic') {
+            psiEdge[m][0] = 1.0;
+          } else if (config.bcLeft === 'reflective') {
+            psiEdge[m][0] = psiEdge[N - 1 - m][0];
+          } else {
+            psiEdge[m][0] = 0.0;
+          }
+
+          for (let i = 0; i < I; i++) {
+            const alpha = (h * sigt[i]) / mu_m;
+            const beta = calcBeta(method, alpha);
+            const effFiss = hasFixedSource ? (nusf[i] / config.keff) : (nusf[i] / keffCalc);
+            const q = (sigs[i] + effFiss) * phi[i] + (hasFixedSource ? sext[i] : 0.0);
+            const stot = q / sigt[i];
+            const pIn = psiEdge[m][i];
+            const pAvg = (2.0 * pIn + (1.0 + beta) * alpha * stot) / (2.0 + (1.0 + beta) * alpha);
+            psiAvg[m][i] = pAvg;
+            psiEdge[m][i + 1] = (2.0 * pAvg - (1.0 - beta) * pIn) / (1.0 + beta);
+          }
+        }
+
+        for (let m = 0; m < halfN; m++) {
+          const mu_m = Math.abs(mu[m]);
+          if (config.bcRight === 'reflective') {
+            psiEdge[m][I] = psiEdge[N - 1 - m][I];
+          } else {
+            psiEdge[m][I] = 0.0;
+          }
+
+          for (let i = I - 1; i >= 0; i--) {
+            const alpha = (h * sigt[i]) / mu_m;
+            const beta = calcBeta(method, alpha);
+            const effFiss = hasFixedSource ? (nusf[i] / config.keff) : (nusf[i] / keffCalc);
+            const q = (sigs[i] + effFiss) * phi[i] + (hasFixedSource ? sext[i] : 0.0);
+            const stot = q / sigt[i];
+            const pIn = psiEdge[m][i + 1];
+            const pAvg = (2.0 * pIn + (1.0 + beta) * alpha * stot) / (2.0 + (1.0 + beta) * alpha);
+            psiAvg[m][i] = pAvg;
+            psiEdge[m][i] = (2.0 * pAvg - (1.0 - beta) * pIn) / (1.0 + beta);
+          }
+        }
+
+        for (let i = 0; i < I; i++) {
+          let sum = 0;
+          for (let m = 0; m < N; m++) sum += w[m] * psiAvg[m][i];
+          phi[i] = 0.5 * sum;
+        }
+
+        if (!hasFixedSource && hasFission) {
+          let num = 0, den = 0;
+          for (let i = 0; i < I; i++) {
+            num += nusf[i] * phi[i] * h;
+            den += nusf[i] * phiOld[i] * h;
+          }
+          if (den > 1e-12) keffCalc = keffCalc * (num / den);
+          const maxPhi = Math.max(...phi, 1e-12);
+          for (let i = 0; i < I; i++) phi[i] /= maxPhi;
+        }
+      }
+
+      const phiEdge = new Float64Array(I + 1);
+      const xNodes = new Float64Array(I + 1);
+      for (let i = 0; i <= I; i++) {
+        xNodes[i] = i * h;
+        let sum = 0;
+        for (let m = 0; m < N; m++) sum += w[m] * psiEdge[m][i];
+        phiEdge[i] = 0.5 * sum;
+      }
+
+      let J_right = 0, J_left = 0;
+      for (let m = halfN; m < N; m++) J_right += mu[m] * psiEdge[m][I] * w[m];
+      for (let m = 0; m < halfN; m++) J_left += Math.abs(mu[m]) * psiEdge[m][0] * w[m];
+
+      let totalAbs = 0, totalFissProd = 0;
+      for (let i = 0; i < I; i++) {
+        const siga_i = Math.max(0, sigt[i] - sigs[i]);
+        totalAbs += siga_i * phi[i] * h;
+        totalFissProd += (nusf[i] / config.keff) * phi[i] * h;
+      }
+
+      return { xNodes, phiCell: phi, phiEdge, psiEdge, keffConverged: keffCalc, J_right, J_left, totalAbs, totalFissProd };
+    }
+
+    function recomputeAllSolutions() {
+      const I = config.meshCells;
+      const N = config.snOrder;
+      cachedSolutions = {
+        DD: solveSNSystem(N, I, 'DD'),
+        STEP: solveSNSystem(N, I, 'STEP'),
+        SC: solveSNSystem(N, I, 'SC'),
+        S2_SC: solveSNSystem(2, I, 'SC'),
+        S4_SC: solveSNSystem(4, I, 'SC'),
+        fineSC: solveSNSystem(N, 80, 'SC')
+      };
+      drawQuantitativeChart();
+      updateTheoryAndBalanceUI();
+    }
+
+    // =========================================================================
+    // 4. CONVERSÃO DE COORDENADAS FÍSICAS (cm) <-> TELA (px) COM ZOOM
+    // =========================================================================
+    const slabCanvas = document.getElementById('slabCanvas');
+    const ctx = slabCanvas.getContext('2d');
+    const chartCanvas = document.getElementById('chartCanvas');
+    const chartCtx = chartCanvas.getContext('2d');
+
+    const slabStartRatio = 0.08;
+    const slabEndRatio = 0.92;
+    const SLAB_TOP_PX = 28;
+    const SLAB_BOT_PX = 255 - 28;
+    const SLAB_H_PX = SLAB_BOT_PX - SLAB_TOP_PX;
+
+    function getViewportCm() {
+      const visSpanCm = config.L / camera.zoom;
+      let halfSpan = visSpanCm / 2.0;
+      let cx = camera.centerX_cm;
+      if (camera.zoom <= 1.001) {
+        cx = config.L / 2.0;
+      } else {
+        cx = Math.max(halfSpan, Math.min(config.L - halfSpan, cx));
+      }
+      return {
+        xMin_cm: cx - halfSpan,
+        xMax_cm: cx + halfSpan,
+        visSpan_cm: visSpanCm,
+        centerX_cm: cx
+      };
+    }
+
+    // Mapeia x_cm físico para coordenada X em pixels no canvas
+    function cmToScreenX(x_cm, canvasW) {
+      const xStartPx = canvasW * slabStartRatio;
+      const slabW_px = canvasW * (slabEndRatio - slabStartRatio);
+      const vp = getViewportCm();
+      return xStartPx + ((x_cm - vp.xMin_cm) / vp.visSpan_cm) * slabW_px;
+    }
+
+    // Mapeia coordenada X em pixels para x_cm físico
+    function screenXToCm(px, canvasW) {
+      const xStartPx = canvasW * slabStartRatio;
+      const slabW_px = canvasW * (slabEndRatio - slabStartRatio);
+      const vp = getViewportCm();
+      return vp.xMin_cm + ((px - xStartPx) / slabW_px) * vp.visSpan_cm;
+    }
+
+    // Altura física equivalente da placa em cm para que 1 cm vertical = 1 cm horizontal em zoom 1x
+    function getSlabHeightCm(canvasW) {
+      const slabW_px = Math.max(200, canvasW * (slabEndRatio - slabStartRatio));
+      return config.L * (SLAB_H_PX / slabW_px);
+    }
+
+    function yCmToScreenY(y_cm, H_cm) {
+      return SLAB_TOP_PX + (y_cm / H_cm) * SLAB_H_PX;
+    }
+
+    function resizeCanvases() {
+      const dpr = window.devicePixelRatio || 1;
+      const r1 = slabCanvas.getBoundingClientRect();
+      if (r1.width > 0) {
+        slabCanvas.width = r1.width * dpr;
+        slabCanvas.height = 255 * dpr;
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      }
+      const r2 = chartCanvas.getBoundingClientRect();
+      if (r2.width > 0) {
+        chartCanvas.width = r2.width * dpr;
+        chartCanvas.height = 210 * dpr;
+        chartCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        drawQuantitativeChart();
+      }
+    }
+    window.addEventListener('resize', resizeCanvases);
+
+    function pickAngle(onlyForward = false) {
+      if (config.showSnRays) {
+        if (onlyForward) {
+          const f = S4_ANGLES.filter(a => Math.cos(a) > 0);
+          return f[Math.floor(Math.random() * f.length)];
+        }
+        return S4_ANGLES[Math.floor(Math.random() * S4_ANGLES.length)];
+      }
+      if (onlyForward) {
+        return (Math.random() - 0.5) * (Math.PI * 0.82);
+      }
+      return Math.random() * Math.PI * 2;
+    }
+
+    // Sorteia uma profundidade óptica adimensional tau = -ln(xi)
+    function sampleOpticalDepth() {
+      const u = Math.max(1e-9, Math.random());
+      return -Math.log(u);
+    }
+
+    // =========================================================================
+    // 5. CLASSE PARTÍCULA COM TRANSPORTE FÍSICO EXATO POR CAMINHO ÓPTICO (cm)
+    // =========================================================================
+    class Particle {
+      constructor(originType = 'boundary', customX_cm = null, customY_cm = null, isTracked = false) {
+        const w = slabCanvas.getBoundingClientRect().width || 700;
+        const H_cm = getSlabHeightCm(w);
+
+        this.originType = originType;
+        // Velocidade física base ajustada proporcionalmente ao tamanho da placa para boa cadência visual
+        this.speedCmPerFrame = (config.L / 260.0) * (0.9 + Math.random() * 0.2);
+        this.isAlive = true;
+        this.isTracked = isTracked;
+        this.collisions = 0;
+        this.totalPath_cm = 0.0;
+        this.trail = []; // Vértices em coordenadas físicas { x_cm, y_cm, event }
+
+        if (originType === 'boundary') {
+          this.x_cm = 0.02;
+          this.y_cm = H_cm * (0.12 + Math.random() * 0.76);
+          this.angle = pickAngle(true);
+          this.color = '#10b981';
+          stats.inc++;
+        } else if (originType === 'ext_source') {
+          const zones = getSpatialZones();
+          const activeZones = zones.filter(z => config.regions[z.regIdx].sext > 0);
+          const chosenZone = activeZones.length > 0
+            ? activeZones[Math.floor(Math.random() * activeZones.length)]
+            : zones[0];
+          const xi = chosenZone.start + Math.random() * (chosenZone.end - chosenZone.start);
+          this.x_cm = xi * config.L;
+          this.y_cm = H_cm * (0.12 + Math.random() * 0.76);
+          this.angle = pickAngle(false);
+          this.color = '#06b6d4';
+          stats.ext++;
+          effects.push({ type: 'birth', x_cm: this.x_cm, y_cm: this.y_cm, radius: 1.5, alpha: 0.9 });
+        } else {
+          this.x_cm = customX_cm !== null ? customX_cm : config.L * (0.3 + Math.random() * 0.4);
+          this.y_cm = customY_cm !== null ? customY_cm : H_cm * (0.15 + Math.random() * 0.70);
+          this.angle = pickAngle(false);
+          this.color = '#f59e0b';
+        }
+
+        // Sorteio Exato de Monte Carlo: tau_rem = -ln(xi)
+        this.tau_rem = sampleOpticalDepth();
+        this.trail.push({ x_cm: this.x_cm, y_cm: this.y_cm, event: 'start' });
+      }
+
+      promoteToTracked() {
+        if (trackedParticle && trackedParticle !== this) {
+          trackedParticle.isTracked = false;
+        }
+        this.isTracked = true;
+        trackedParticle = this;
+        if (this.trail.length === 0) {
+          this.trail.push({ x_cm: this.x_cm, y_cm: this.y_cm, event: 'start' });
+        }
+      }
+
+      update(canvasW, dtFactor = simSpeed) {
+        if (!this.isAlive) return;
+
+        const H_cm = getSlabHeightCm(canvasW);
+        let stepRem_cm = this.speedCmPerFrame * dtFactor;
+
+        // Sub-stepping exato por caminho óptico dentro do frame
+        let safety = 0;
+        while (stepRem_cm > 1e-6 && this.isAlive && safety < 8) {
+          safety++;
+
+          // Se estiver no vácuo externo (fora de [0, L]), apenas voa livremente
+          if (this.x_cm < 0 || this.x_cm > config.L) {
+            this.x_cm += Math.cos(this.angle) * stepRem_cm;
+            this.y_cm += Math.sin(this.angle) * stepRem_cm;
+            stepRem_cm = 0;
+
+            if (this.x_cm < -0.04 * config.L) {
+              this.die('Fuga pela esquerda (x=0)');
+              stats.leak++;
+              return;
+            }
+            if (this.x_cm > 1.04 * config.L) {
+              this.die(`Fuga para o vácuo (x=${config.L}cm)`);
+              stats.leak++;
+              return;
+            }
+            break;
+          }
+
+          const xi = this.x_cm / config.L;
+          const mat = getMaterialAtXi(xi);
+          const distToCol_cm = this.tau_rem / mat.sigt;
+
+          if (distToCol_cm <= stepRem_cm) {
+            // O nêutron atinge exatamente o ponto de colisão neste passo!
+            this.x_cm += Math.cos(this.angle) * distToCol_cm;
+            this.y_cm += Math.sin(this.angle) * distToCol_cm;
+            this.totalPath_cm += distToCol_cm;
+            stepRem_cm -= distToCol_cm;
+
+            // Verificar se cruzou contorno antes de colidir
+            if (this.handleBoundaries(H_cm)) {
+              if (!this.isAlive) return;
+            }
+
+            // Executar reação nuclear no ponto exato de colisão (se ainda estiver na placa)
+            if (this.x_cm >= 0 && this.x_cm <= config.L) {
+              this.performCollision(mat);
+              this.tau_rem = sampleOpticalDepth(); // Novo sorteio -ln(xi)
+            }
+          } else {
+            // Avança stepRem_cm e desconta o caminho óptico consumido: d(tau) = sigt * ds
+            this.x_cm += Math.cos(this.angle) * stepRem_cm;
+            this.y_cm += Math.sin(this.angle) * stepRem_cm;
+            this.totalPath_cm += stepRem_cm;
+            this.tau_rem -= mat.sigt * stepRem_cm;
+            stepRem_cm = 0;
+
+            this.handleBoundaries(H_cm);
+          }
+        }
+      }
+
+      handleBoundaries(H_cm) {
+        let bounced = false;
+        // Paredes superior e inferior (mantém dentro da faixa visual 1D)
+        if (this.y_cm < 0.04 * H_cm) {
+          this.y_cm = 0.04 * H_cm;
+          this.angle = -this.angle;
+          if (this.isTracked) this.trail.push({ x_cm: this.x_cm, y_cm: this.y_cm, event: 'wall' });
+          bounced = true;
+        } else if (this.y_cm > 0.96 * H_cm) {
+          this.y_cm = 0.96 * H_cm;
+          this.angle = -this.angle;
+          if (this.isTracked) this.trail.push({ x_cm: this.x_cm, y_cm: this.y_cm, event: 'wall' });
+          bounced = true;
+        }
+
+        // Contorno Esquerdo (x = 0)
+        if (this.x_cm <= 0 && Math.cos(this.angle) < 0) {
+          if (config.bcLeft === 'reflective') {
+            this.x_cm = -this.x_cm;
+            this.angle = Math.PI - this.angle;
+            effects.push({ type: 'reflect', x_cm: 0, y_cm: this.y_cm, radius: 2, alpha: 0.85 });
+            if (this.isTracked) this.trail.push({ x_cm: 0, y_cm: this.y_cm, event: 'reflect' });
+            bounced = true;
+          }
+        }
+
+        // Contorno Direito (x = L)
+        if (this.x_cm >= config.L && Math.cos(this.angle) > 0) {
+          if (config.bcRight === 'reflective') {
+            this.x_cm = 2 * config.L - this.x_cm;
+            this.angle = Math.PI - this.angle;
+            effects.push({ type: 'reflect', x_cm: config.L, y_cm: this.y_cm, radius: 2, alpha: 0.85 });
+            if (this.isTracked) this.trail.push({ x_cm: config.L, y_cm: this.y_cm, event: 'reflect' });
+            bounced = true;
+          }
+        }
+        return bounced;
+      }
+
+      performCollision(mat) {
+        const totalW = mat.sigs + mat.siga + mat.effNusf;
+        if (totalW <= 0) return;
+
+        const r = Math.random() * totalW;
+        this.collisions++;
+
+        if (r < mat.sigs) {
+          // Espalhamento isotrópico
+          this.angle = pickAngle(false);
+          this.color = '#3b82f6';
+          stats.scat++;
+          if (this.isTracked) {
+            this.trail.push({ x_cm: this.x_cm, y_cm: this.y_cm, event: 'scatter' });
+            effects.push({ type: 'tracked_scatter', x_cm: this.x_cm, y_cm: this.y_cm, radius: 2.5, alpha: 1.0 });
+          }
+        } else if (r < mat.sigs + mat.effNusf) {
+          // Fissão nuclear
+          stats.fiss++;
+          effects.push({ type: 'fission', x_cm: this.x_cm, y_cm: this.y_cm, radius: 3.0, alpha: 1.0 });
+          this.angle = pickAngle(false);
+          this.color = '#f59e0b';
+          if (this.isTracked) {
+            this.trail.push({ x_cm: this.x_cm, y_cm: this.y_cm, event: 'fission' });
+          }
+          const extraNeutrons = mat.effNusf >= 0.12 ? 2 : 1;
+          for (let k = 0; k < extraNeutrons; k++) {
+            if (particles.length < MAX_PARTICLES) {
+              particles.push(new Particle('fission', this.x_cm, this.y_cm, false));
+            }
+          }
+        } else {
+          // Absorção
+          stats.abs++;
+          effects.push({ type: 'absorption', x_cm: this.x_cm, y_cm: this.y_cm, radius: 2.5, alpha: 1.0 });
+          if (this.isTracked) {
+            this.trail.push({ x_cm: this.x_cm, y_cm: this.y_cm, event: 'absorbed' });
+          }
+          const avgMfp = (this.totalPath_cm / Math.max(1, this.collisions)).toFixed(2);
+          this.die(`Absorvido em ${mat.zoneLabel} (⟨s⟩=${avgMfp}cm)`);
+        }
+      }
+
+      die(reason) {
+        this.isAlive = false;
+        if (this.isTracked) {
+          lastTrackedGhostTrail = [...this.trail, { x_cm: this.x_cm, y_cm: this.y_cm, event: 'end' }];
+          lastTrackedOutcome = `${reason} [${this.collisions} col.]`;
+          trackedParticle = null;
+        }
+      }
+
+      draw(c, canvasW) {
+        if (!this.isAlive) return;
+        const H_cm = getSlabHeightCm(canvasW);
+        const sx = cmToScreenX(this.x_cm, canvasW);
+        const sy = yCmToScreenY(this.y_cm, H_cm);
+
+        // Se estiver fora da área visível de zoom, não desenhar o corpo (mas manter simulação)
+        if (sx < -30 || sx > canvasW + 30) return;
+
+        if (this.isTracked && config.trackEnabled) {
+          if (this.trail.length > 0) {
+            c.save();
+            c.beginPath();
+            for (let i = 0; i < this.trail.length; i++) {
+              const tx = cmToScreenX(this.trail[i].x_cm, canvasW);
+              const ty = yCmToScreenY(this.trail[i].y_cm, H_cm);
+              if (i === 0) c.moveTo(tx, ty);
+              else c.lineTo(tx, ty);
+            }
+            c.lineTo(sx, sy);
+            c.strokeStyle = '#ec4899';
+            c.lineWidth = 2.3;
+            c.stroke();
+
+            for (let i = 0; i < this.trail.length; i++) {
+              const pt = this.trail[i];
+              if (pt.event === 'scatter' || pt.event === 'fission') {
+                const tx = cmToScreenX(pt.x_cm, canvasW);
+                const ty = yCmToScreenY(pt.y_cm, H_cm);
+                c.beginPath();
+                c.arc(tx, ty, 2.8, 0, Math.PI * 2);
+                c.fillStyle = pt.event === 'fission' ? '#f59e0b' : '#ec4899';
+                c.fill();
+                c.strokeStyle = '#ffffff';
+                c.lineWidth = 0.9;
+                c.stroke();
+              }
+            }
+            c.restore();
+          }
+
+          c.save();
+          c.beginPath();
+          c.arc(sx, sy, 9.5, 0, Math.PI * 2);
+          c.fillStyle = 'rgba(236, 72, 153, 0.25)';
+          c.fill();
+          c.strokeStyle = '#ec4899';
+          c.lineWidth = 1.6;
+          c.stroke();
+
+          c.beginPath();
+          c.arc(sx, sy, 4.6, 0, Math.PI * 2);
+          c.fillStyle = '#ec4899';
+          c.fill();
+          c.strokeStyle = '#ffffff';
+          c.lineWidth = 1.4;
+          c.stroke();
+          c.restore();
+          return;
+        }
+
+        // Rastro direcional proporcional
+        const tailLenPx = 9.0;
+        c.beginPath();
+        c.moveTo(sx, sy);
+        c.lineTo(sx - Math.cos(this.angle) * tailLenPx, sy - Math.sin(this.angle) * tailLenPx);
+        c.strokeStyle = this.color;
+        c.globalAlpha = 0.42;
+        c.lineWidth = 2.0;
+        c.stroke();
+        c.globalAlpha = 1.0;
+
+        c.beginPath();
+        c.arc(sx, sy, 3.3, 0, Math.PI * 2);
+        c.fillStyle = this.color;
+        c.fill();
+        c.strokeStyle = '#ffffff';
+        c.lineWidth = 0.9;
+        c.stroke();
+      }
+    }
+
+    function spawnNewParticle(forceTracked = false) {
+      const hasExtSource = config.regions.some((r, idx) => {
+        if (config.geomMode === 'single' && idx > 0) return false;
+        return r.sext > 0;
+      });
+      const hasFission = config.regions.some((r, idx) => {
+        if (config.geomMode === 'single' && idx > 0) return false;
+        return r.nusf > 0;
+      });
+
+      let origin = 'boundary';
+      if (config.bcLeft === 'isotropic' && (!hasExtSource || Math.random() < 0.55)) {
+        origin = 'boundary';
+      } else if (hasExtSource) {
+        origin = 'ext_source';
+      } else if (hasFission) {
+        origin = 'fission';
+      }
+
+      const p = new Particle(origin, null, null, false);
+      particles.push(p);
+      if (forceTracked) p.promoteToTracked();
+      return p;
+    }
+
+    function seedInitialParticles() {
+      particles = [];
+      effects = [];
+      trackedParticle = null;
+      lastTrackedGhostTrail = [];
+      lastTrackedOutcome = '';
+      stats = { inc: 0, ext: 0, scat: 0, fiss: 0, abs: 0, leak: 0 };
+
+      for (let i = 0; i < 32; i++) {
+        const p = spawnNewParticle(false);
+        if (p.originType === 'boundary') {
+          p.x_cm = Math.random() * (config.L * 0.25);
+          p.trail = [{ x_cm: p.x_cm, y_cm: p.y_cm, event: 'start' }];
+        }
+      }
+      if (config.trackEnabled) spawnNewParticle(true);
+      updateStatsUI();
+    }
+
+    // =========================================================================
+    // 6. DESENHO DO CANVAS DA PLACA COM SUPORTE A ZOOM E BARRA DE ESCALA 1 cm
+    // =========================================================================
+    function isDarkMode() {
+      return document.body.classList.contains('app-dark');
+    }
+
+    function drawSlabBackground(w, h, isDark) {
+      const xStartPx = w * slabStartRatio;
+      const xEndPx = w * slabEndRatio;
+      const slabW_px = xEndPx - xStartPx;
+      const H_cm = getSlabHeightCm(w);
+      const zones = getSpatialZones();
+
+      // Se a câmera estiver seguindo o Nêutron Guia em modo Zoom > 1x
+      if (camera.zoom > 1.01 && camera.followTracked && trackedParticle && trackedParticle.isAlive) {
+        camera.centerX_cm += (trackedParticle.x_cm - camera.centerX_cm) * 0.12;
+      }
+
+      const vp = getViewportCm();
+      document.getElementById('zoom-window-readout').textContent =
+        `Janela: x ∈ [${vp.xMin_cm.toFixed(1)}, ${vp.xMax_cm.toFixed(1)} cm] de ${config.L} cm | Escala Física Exata`;
+
+      ctx.fillStyle = isDark ? '#0b0f19' : '#f1f5f9';
+      ctx.fillRect(0, 0, w, h);
+
+      // Recorte (clipping) para a janela da placa
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(xStartPx, SLAB_TOP_PX, slabW_px, SLAB_H_PX);
+      ctx.clip();
+
+      const zoneColorsDark = [
+        'rgba(30, 58, 138, 0.44)',
+        'rgba(88, 28, 135, 0.38)',
+        'rgba(146, 64, 14, 0.45)'
+      ];
+      const zoneColorsLight = [
+        'rgba(219, 234, 254, 0.80)',
+        'rgba(243, 232, 255, 0.82)',
+        'rgba(254, 243, 199, 0.85)'
+      ];
+
+      zones.forEach((z, idx) => {
+        const zStart_cm = z.start * config.L;
+        const zEnd_cm = z.end * config.L;
+        const zx1 = cmToScreenX(zStart_cm, w);
+        const zx2 = cmToScreenX(zEnd_cm, w);
+        const zw = zx2 - zx1;
+        if (zx2 < xStartPx || zx1 > xEndPx) return;
+
+        const r = config.regions[z.regIdx];
+        const sigt = Math.max(0.01, r.sigs + r.siga);
+        const c0 = (r.sigs + r.nusf / config.keff) / sigt;
+
+        ctx.fillStyle = isDark ? zoneColorsDark[z.regIdx] : zoneColorsLight[z.regIdx];
+        ctx.fillRect(zx1, SLAB_TOP_PX, zw, SLAB_H_PX);
+
+        if (r.sext > 0) {
+          ctx.fillStyle = isDark ? 'rgba(6, 182, 212, 0.16)' : 'rgba(6, 182, 212, 0.14)';
+          ctx.fillRect(zx1, SLAB_TOP_PX, zw, SLAB_H_PX);
+        }
+
+        if (idx > 0) {
+          ctx.strokeStyle = isDark ? 'rgba(255, 255, 255, 0.40)' : 'rgba(15, 23, 42, 0.35)';
+          ctx.setLineDash([5, 3]);
+          ctx.lineWidth = 1.6;
+          ctx.beginPath();
+          ctx.moveTo(zx1, SLAB_TOP_PX);
+          ctx.lineTo(zx1, SLAB_BOT_PX);
+          ctx.stroke();
+          ctx.setLineDash([]);
+        }
+
+        const visLeft = Math.max(xStartPx, zx1);
+        const visRight = Math.min(xEndPx, zx2);
+        if (visRight - visLeft > 75) {
+          const midPx = 0.5 * (visLeft + visRight);
+          ctx.fillStyle = isDark ? '#e2e8f0' : '#1e293b';
+          ctx.font = 'bold 10.5px sans-serif';
+          ctx.textAlign = 'center';
+          ctx.fillText(z.label, midPx, SLAB_TOP_PX + 14);
+
+          ctx.font = '9.5px monospace';
+          ctx.fillStyle = isDark ? '#94a3b8' : '#475569';
+          let subInfo = `σt=${sigt.toFixed(2)} (λ=${(1 / sigt).toFixed(2)}cm) | c₀=${c0.toFixed(2)}`;
+          ctx.fillText(subInfo, midPx, SLAB_TOP_PX + 26);
+        }
+      });
+
+      // Grade espacial adaptativa ao nível de Zoom!
+      let gridStep_cm = 10;
+      if (vp.visSpan_cm <= 8) gridStep_cm = 0.5;
+      else if (vp.visSpan_cm <= 18) gridStep_cm = 1.0;
+      else if (vp.visSpan_cm <= 35) gridStep_cm = 2.0;
+      else if (vp.visSpan_cm <= 60) gridStep_cm = 5.0;
+      else gridStep_cm = 10.0;
+
+      const firstTick = Math.ceil(vp.xMin_cm / gridStep_cm) * gridStep_cm;
+      ctx.strokeStyle = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.07)';
+      ctx.lineWidth = 1;
+      for (let xTick = firstTick; xTick <= vp.xMax_cm + 1e-6; xTick += gridStep_cm) {
+        const gx = cmToScreenX(xTick, w);
+        ctx.beginPath();
+        ctx.moveTo(gx, SLAB_TOP_PX);
+        ctx.lineTo(gx, SLAB_BOT_PX);
+        ctx.stroke();
+      }
+
+      // Trajetória fantasma do último Nêutron Guia
+      if (config.trackEnabled && !trackedParticle && lastTrackedGhostTrail.length > 1) {
+        ctx.save();
+        ctx.beginPath();
+        for (let i = 0; i < lastTrackedGhostTrail.length; i++) {
+          const tx = cmToScreenX(lastTrackedGhostTrail[i].x_cm, w);
+          const ty = yCmToScreenY(lastTrackedGhostTrail[i].y_cm, H_cm);
+          if (i === 0) ctx.moveTo(tx, ty);
+          else ctx.lineTo(tx, ty);
+        }
+        ctx.strokeStyle = 'rgba(236, 72, 153, 0.48)';
+        ctx.setLineDash([4, 3]);
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        ctx.restore();
+      }
+
+      // Curva sobreposta do Fluxo Escalar phi(x) ajustada ao Zoom
+      if (config.showFlux && cachedSolutions && cachedSolutions.fineSC) {
+        const phiEdge = cachedSolutions.fineSC.phiEdge;
+        const xNodes = cachedSolutions.fineSC.xNodes;
+        const maxVal = Math.max(...phiEdge, 1e-6);
+        const topPad = SLAB_TOP_PX + 32;
+        const bottomBase = SLAB_BOT_PX - 6;
+        const usableH = bottomBase - topPad;
+
+        ctx.save();
+        ctx.beginPath();
+        for (let i = 0; i < phiEdge.length; i++) {
+          const px = cmToScreenX(xNodes[i], w);
+          const py = bottomBase - (phiEdge[i] / maxVal) * usableH;
+          if (i === 0) ctx.moveTo(px, py);
+          else ctx.lineTo(px, py);
+        }
+        ctx.strokeStyle = isDark ? 'rgba(16, 185, 129, 0.90)' : 'rgba(5, 150, 105, 0.90)';
+        ctx.lineWidth = 2.6;
+        ctx.setLineDash([6, 4]);
+        ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.restore();
+      }
+
+      // Barra de Escala Física de 1.0 cm (= 1 Livre Caminho Médio para sigma_t=1)
+      const oneCmPx = (1.0 / vp.visSpan_cm) * slabW_px;
+      if (oneCmPx >= 6) {
+        const barX = xStartPx + 14;
+        const barY = SLAB_BOT_PX - 12;
+        ctx.save();
+        ctx.strokeStyle = '#f43f5e';
+        ctx.lineWidth = 2.5;
+        ctx.beginPath();
+        ctx.moveTo(barX, barY);
+        ctx.lineTo(barX + oneCmPx, barY);
+        ctx.moveTo(barX, barY - 4);
+        ctx.lineTo(barX, barY + 4);
+        ctx.moveTo(barX + oneCmPx, barY - 4);
+        ctx.lineTo(barX + oneCmPx, barY + 4);
+        ctx.stroke();
+
+        ctx.fillStyle = isDark ? '#fda4af' : '#be123c';
+        ctx.font = 'bold 10px monospace';
+        ctx.textAlign = 'left';
+        ctx.fillText('1 cm (λ_mfp p/ σt=1)', barX + oneCmPx + 6, barY + 3);
+        ctx.restore();
+      }
+
+      ctx.restore(); // Fim do clip da placa
+
+      // Borda da janela da placa
+      ctx.strokeStyle = isDark ? '#3b82f6' : '#2563eb';
+      ctx.lineWidth = 2.2;
+      ctx.strokeRect(xStartPx, SLAB_TOP_PX, slabW_px, SLAB_H_PX);
+
+      // Rótulos de coordenadas X (cm) abaixo da placa
+      ctx.fillStyle = isDark ? '#94a3b8' : '#64748b';
+      ctx.font = '10px monospace';
+      ctx.textAlign = 'center';
+      for (let xTick = firstTick; xTick <= vp.xMax_cm + 1e-6; xTick += gridStep_cm) {
+        const gx = cmToScreenX(xTick, w);
+        if (gx >= xStartPx + 18 && gx <= xEndPx - 18) {
+          ctx.fillText(`${Number.isInteger(gridStep_cm) ? xTick.toFixed(0) : xTick.toFixed(1)} cm`, gx, h - 9);
+        }
+      }
+
+      ctx.fillStyle = isDark ? '#e2e8f0' : '#1e293b';
+      ctx.font = 'bold 10.5px monospace';
+      ctx.fillText(`${vp.xMin_cm.toFixed(1)} cm`, xStartPx, h - 9);
+      ctx.fillText(`${vp.xMax_cm.toFixed(1)} cm`, xEndPx, h - 9);
+
+      // Indicadores visuais nas extremidades reais x=0 e x=L (quando visíveis no zoom)
+      if (vp.xMin_cm <= 0.05) {
+        if (config.bcLeft === 'reflective') {
+          ctx.strokeStyle = isDark ? '#38bdf8' : '#0284c7';
+          ctx.lineWidth = 3;
+          ctx.beginPath();
+          ctx.moveTo(xStartPx, SLAB_TOP_PX);
+          ctx.lineTo(xStartPx, SLAB_BOT_PX);
+          ctx.stroke();
+        } else if (config.bcLeft === 'isotropic') {
+          ctx.strokeStyle = '#10b981';
+          ctx.fillStyle = '#10b981';
+          ctx.lineWidth = 2;
+          for (let y = 55; y < h - 40; y += 46) {
+            ctx.beginPath();
+            ctx.moveTo(xStartPx - 22, y);
+            ctx.lineTo(xStartPx - 5, y);
+            ctx.stroke();
+          }
+        }
+      }
+
+      if (vp.xMax_cm >= config.L - 0.05 && config.bcRight === 'vacuum') {
+        ctx.strokeStyle = '#a855f7';
+        ctx.lineWidth = 1.8;
+        for (let y = 62; y < h - 40; y += 52) {
+          ctx.beginPath();
+          ctx.moveTo(xEndPx + 5, y);
+          ctx.lineTo(xEndPx + 22, y);
+          ctx.stroke();
+        }
+      }
+    }
+
+    function drawStaticDiagram(w, h, isDark) {
+      drawSlabBackground(w, h, isDark);
+      const xStart = w * slabStartRatio;
+      const slabW = w * (slabEndRatio - slabStartRatio);
+
+      const pts = [
+        { x: xStart + slabW * 0.15, y: h * 0.62, label: 'Sorteio s = −ln(ξ)/σt' },
+        { x: xStart + slabW * 0.38, y: h * 0.38, label: 'Espalhamento (μ → μ\')' },
+        { x: xStart + slabW * 0.60, y: h * 0.68, label: 'Colisão / Fissão' },
+        { x: xStart + slabW * 0.82, y: h * 0.42, label: 'Absorção (σa)' }
+      ];
+
+      ctx.save();
+      ctx.strokeStyle = '#ec4899';
+      ctx.lineWidth = 2.8;
+      ctx.beginPath();
+      ctx.moveTo(pts[0].x, pts[0].y);
+      for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i].x, pts[i].y);
+      ctx.stroke();
+
+      pts.forEach((pt, idx) => {
+        ctx.beginPath();
+        ctx.arc(pt.x, pt.y, 5.5, 0, Math.PI * 2);
+        ctx.fillStyle = idx === pts.length - 1 ? '#ef4444' : '#ec4899';
+        ctx.fill();
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+
+        ctx.fillStyle = isDark ? '#f8fafc' : '#0f172a';
+        ctx.font = 'bold 10.5px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(pt.label, pt.x, pt.y + (idx % 2 === 0 ? 18 : -12));
+      });
+      ctx.restore();
+    }
+
+    function drawQuantitativeChart() {
+      if (!modulesVisible.charts || !cachedSolutions) return;
+      const rect = chartCanvas.getBoundingClientRect();
+      const w = rect.width;
+      const h = 210;
+      if (w <= 0) return;
+
+      const isDark = isDarkMode();
+      chartCtx.clearRect(0, 0, w, h);
+
+      chartCtx.fillStyle = isDark ? '#0b0f19' : '#f8fafc';
+      chartCtx.fillRect(0, 0, w, h);
+
+      const padL = 52, padR = 24, padT = 24, padB = 30;
+      const plotW = w - padL - padR;
+      const plotH = h - padT - padB;
+
+      chartCtx.strokeStyle = isDark ? 'rgba(255,255,255,0.10)' : 'rgba(0,0,0,0.08)';
+      chartCtx.lineWidth = 1;
+      for (let g = 0; g <= 4; g++) {
+        const gy = padT + (g / 4) * plotH;
+        chartCtx.beginPath();
+        chartCtx.moveTo(padL, gy);
+        chartCtx.lineTo(padL + plotW, gy);
+        chartCtx.stroke();
+      }
+
+      const zones = getSpatialZones();
+      zones.forEach((z, idx) => {
+        if (idx > 0) {
+          const gx = padL + z.start * plotW;
+          chartCtx.strokeStyle = isDark ? 'rgba(255,255,255,0.22)' : 'rgba(0,0,0,0.20)';
+          chartCtx.setLineDash([4, 3]);
+          chartCtx.beginPath();
+          chartCtx.moveTo(gx, padT);
+          chartCtx.lineTo(gx, padT + plotH);
+          chartCtx.stroke();
+          chartCtx.setLineDash([]);
+        }
+      });
+
+      const series = [];
+      if (config.chartType === 'scalar_methods') {
+        series.push({ label: 'SC (Step Characteristic)', data: cachedSolutions.SC.phiEdge, x: cachedSolutions.SC.xNodes, color: '#10b981', dash: [] });
+        series.push({ label: 'DD (Diamond Difference)', data: cachedSolutions.DD.phiEdge, x: cachedSolutions.DD.xNodes, color: '#3b82f6', dash: [5, 3] });
+        series.push({ label: 'Step (Upwind)', data: cachedSolutions.STEP.phiEdge, x: cachedSolutions.STEP.xNodes, color: '#f59e0b', dash: [2, 2] });
+      } else if (config.chartType === 'angular_psi') {
+        const sol = cachedSolutions.SC;
+        const N = config.snOrder;
+        const quad = QUADS[N];
+        const colors = ['#ef4444', '#f59e0b', '#3b82f6', '#10b981'];
+        for (let m = 0; m < N; m++) {
+          series.push({
+            label: `ψ_${m + 1} (μ = ${quad.mu[m].toFixed(2)})`,
+            data: sol.psiEdge[m],
+            x: sol.xNodes,
+            color: colors[m % colors.length],
+            dash: quad.mu[m] < 0 ? [4, 3] : []
+          });
+        }
+      } else {
+        series.push({ label: 'S₄ (Gauss-Legendre N=4)', data: cachedSolutions.S4_SC.phiEdge, x: cachedSolutions.S4_SC.xNodes, color: '#10b981', dash: [] });
+        series.push({ label: 'S₂ (Gauss-Legendre N=2)', data: cachedSolutions.S2_SC.phiEdge, x: cachedSolutions.S2_SC.xNodes, color: '#a855f7', dash: [5, 3] });
+      }
+
+      let maxY = 0, minY = 0;
+      series.forEach(s => {
+        for (let v of s.data) {
+          if (v > maxY) maxY = v;
+          if (v < minY) minY = v;
+        }
+      });
+      if (maxY - minY < 1e-6) maxY = minY + 1.0;
+      const yRange = (maxY - minY) * 1.08;
+
+      series.forEach(s => {
+        chartCtx.save();
+        chartCtx.beginPath();
+        for (let i = 0; i < s.data.length; i++) {
+          const px = padL + (s.x[i] / config.L) * plotW;
+          const py = padT + plotH - ((s.data[i] - minY) / yRange) * plotH;
+          if (i === 0) chartCtx.moveTo(px, py);
+          else chartCtx.lineTo(px, py);
+        }
+        chartCtx.strokeStyle = s.color;
+        chartCtx.lineWidth = 2.2;
+        chartCtx.setLineDash(s.dash);
+        chartCtx.stroke();
+        chartCtx.restore();
+      });
+
+      chartCtx.fillStyle = isDark ? '#94a3b8' : '#475569';
+      chartCtx.font = '10px monospace';
+      chartCtx.textAlign = 'right';
+      for (let g = 0; g <= 4; g++) {
+        const val = maxY - (g / 4) * yRange;
+        const gy = padT + (g / 4) * plotH + 3;
+        chartCtx.fillText(val.toFixed(2), padL - 6, gy);
+      }
+
+      chartCtx.textAlign = 'center';
+      for (let frac = 0; frac <= 1.0; frac += 0.2) {
+        const gx = padL + frac * plotW;
+        chartCtx.fillText(`${Math.round(frac * config.L)} cm`, gx, h - 8);
+      }
+
+      let legX = padL + 8;
+      chartCtx.font = 'bold 10.5px sans-serif';
+      chartCtx.textAlign = 'left';
+      series.forEach(s => {
+        chartCtx.fillStyle = s.color;
+        chartCtx.fillRect(legX, 7, 14, 4);
+        chartCtx.fillStyle = isDark ? '#e2e8f0' : '#1e293b';
+        chartCtx.fillText(s.label, legX + 18, 13);
+        legX += chartCtx.measureText(s.label).width + 38;
+      });
+
+      const solSC = cachedSolutions.SC;
+      const I = config.meshCells;
+      const idx25 = Math.floor(I * 0.25);
+      const idx50 = Math.floor(I * 0.50);
+      const idx75 = Math.floor(I * 0.75);
+      const summaryEl = document.getElementById('chart-table-summary');
+      summaryEl.innerHTML = `
+        <div class="p-1.5 rounded bg-[var(--background)] border border-[var(--border)]">
+          <span class="text-[var(--muted-foreground)]">ϕ(${(config.L * 0.25).toFixed(0)} cm) [SC]:</span>
+          <b class="float-right text-emerald-400">${solSC.phiEdge[idx25].toFixed(4)}</b>
+        </div>
+        <div class="p-1.5 rounded bg-[var(--background)] border border-[var(--border)]">
+          <span class="text-[var(--muted-foreground)]">ϕ(${(config.L * 0.50).toFixed(0)} cm) [SC]:</span>
+          <b class="float-right text-emerald-400">${solSC.phiEdge[idx50].toFixed(4)}</b>
+        </div>
+        <div class="p-1.5 rounded bg-[var(--background)] border border-[var(--border)]">
+          <span class="text-[var(--muted-foreground)]">ϕ(${(config.L * 0.75).toFixed(0)} cm) [SC]:</span>
+          <b class="float-right text-emerald-400">${solSC.phiEdge[idx75].toFixed(4)}</b>
+        </div>
+        <div class="p-1.5 rounded bg-[var(--background)] border border-[var(--border)]">
+          <span class="text-[var(--muted-foreground)]">Fuga Dir. J⁺(${config.L}):</span>
+          <b class="float-right text-purple-400">${solSC.J_right.toFixed(4)}</b>
+        </div>
+      `;
+    }
+
+    // =========================================================================
+    // 6B. EQUAÇÕES NO FORMATO DO RELATÓRIO (MathML NATIVO) E GLOSSÁRIO CLICÁVEL
+    // =========================================================================
+    let isPaperMode = true;
+
+    function renderCourseworkFormulas() {
+      // As equações principais já estão estruturadas nativamente em MathML no HTML
+    }
+
+    const GLOSSARY_DB = {
+      guia: {
+        badge: 'Elemento Visual & Físico',
+        title: 'Nêutron Guia (Rosa Neon) e Histórico de Colisões',
+        units: 'Posição x em cm | Cosseno direcional μ ∈ [−1, 1]',
+        eqNum: '(MC-1)',
+        desc: 'Destaca um único nêutron de teste viajando pela placa com halo rosa neon, desenhando seus vértices de colisão numerados (#1, #2, #3...) e seu vetor velocidade. Permite comprovar visualmente que a distância livre entre duas colisões consecutivas obedece exatamente à distribuição exponencial de Beer-Lambert em centímetros reais.',
+        mathml: `<math display="block"><mrow><msub><mi>s</mi><mi>k</mi></msub><mo>=</mo><mfrac><mrow><mo>−</mo><mi>ln</mi><mo>(</mo><msub><mi>ξ</mi><mi>k</mi></msub><mo>)</mo></mrow><mrow><msub><mi>σ</mi><mi>t</mi></msub><mo>(</mo><mi>x</mi><mo>)</mo></mrow></mfrac><mo>,</mo><mspace width="1.2em"></mspace><mo>⟨</mo><mi>s</mi><mo>⟩</mo><mo>=</mo><mfrac><mn>1</mn><mi>K</mi></mfrac><munderover><mo>∑</mo><mrow><mi>k</mi><mo>=</mo><mn>1</mn></mrow><mi>K</mi></munderover><msub><mi>s</mi><mi>k</mi></msub><mo>⟶</mo><msub><mi>λ</mi><mrow><mi>m</mi><mi>f</mi><mi>p</mi></mrow></msub><mo>=</mo><mfrac><mn>1</mn><msub><mi>σ</mi><mi>t</mi></msub></mfrac></mrow></math>`,
+        liveFn: (r, sigt, c0, sol) => {
+          if (trackedParticle && trackedParticle.isAlive) {
+            const mStep = trackedParticle.collisions > 0 ? (trackedParticle.totalPath_cm / trackedParticle.collisions).toFixed(2) : trackedParticle.totalPath_cm.toFixed(2);
+            return `Valor Atual do Guia: x = ${trackedParticle.x_cm.toFixed(2)} cm | μ = ${Math.cos(trackedParticle.angle).toFixed(3)} | Colisões = ${trackedParticle.collisions} | ⟨s⟩ medido = ${mStep} cm (λ_mfp teórico = ${(1/sigt).toFixed(2)} cm)`;
+          }
+          return `Na região ativa (${r.name}): Livre caminho médio teórico λ_mfp = ${(1/sigt).toFixed(2)} cm. Clique em "+ Lançar Nêutron Guia" ou sobre qualquer partícula na placa!`;
+        }
+      },
+      incidente: {
+        badge: 'Condição de Contorno (x = 0)',
+        title: 'Fonte Prescrita de Contorno / Reflexão / Vácuo',
+        units: 'ψ(0, μ) em n · cm⁻² · s⁻¹',
+        eqNum: '(CC-1)',
+        desc: 'Define como os nêutrons entram na fronteira esquerda (x = 0) para direções que apontam para dentro da placa (μₘ > 0). No Projeto 1A usa-se fonte isotrópica prescrita ψₘ(0) = 1,0 (partículas verdes); no Projeto 1B usa-se contorno reflexivo (espelho perfeito, ψₘ(0) = ψ₋ₘ(0)); no Projeto 2 usa-se vácuo (ψₘ(0) = 0).',
+        mathml: `<math display="block"><mrow><msub><mi>ψ</mi><mi>m</mi></msub><mo>(</mo><mn>0</mn><mo>)</mo><mo>=</mo><mrow><mo>{</mo><mtable columnalign="left" rowspacing="0.25em"><mtr><mtd><mn>1,0</mn><mspace width="0.8em"></mspace><mtext>(Fonte Prescrita, </mtext><msub><mi>μ</mi><mi>m</mi></msub><mo>&gt;</mo><mn>0</mn><mtext>)</mtext></mtd></mtr><mtr><mtd><msub><mi>ψ</mi><mrow><mo>−</mo><mi>m</mi></mrow></msub><mo>(</mo><mn>0</mn><mo>)</mo><mspace width="0.8em"></mspace><mtext>(Contorno Reflexivo)</mtext></mtd></mtr><mtr><mtd><mn>0,0</mn><mspace width="0.8em"></mspace><mtext>(Contorno de Vácuo)</mtext></mtd></mtr></mtable></mrow></mrow></math>`,
+        liveFn: () => `Configuração Atual das Fronteiras: Esquerda (x = 0) = [${config.bcLeft.toUpperCase()}] | Direita (x = ${config.L} cm) = [${config.bcRight.toUpperCase()}] | Nêutrons incidentes gerados: ${stats.inc}`
+      },
+      sext: {
+        badge: 'Termo de Fonte Extrínseca (Eq. 1)',
+        title: 'Fonte Volumétrica Independente S_ext(x) (Partículas Ciano)',
+        units: 'n · cm⁻³ · s⁻¹',
+        eqNum: '(1)',
+        desc: 'Representa a intensidade volumétrica da fonte externa independente na Equação (1) do Relatório 1 (por exemplo, a fonte localizada na Região A do Problema Heterogêneo com S_ext = 2,0). Na equação de balanço celular (Eq. 6), compõe a fonte total normalizada S_{total,i}.',
+        mathml: `<math display="block"><mrow><msub><mi>S</mi><mrow><mi>t</mi><mi>o</mi><mi>t</mi><mi>a</mi><mi>l</mi><mo>,</mo><mi>i</mi></mrow></msub><mo>≡</mo><mfrac><msub><mi>Q</mi><mrow><mi>m</mi><mo>,</mo><mi>i</mi></mrow></msub><msub><mi>σ</mi><mrow><mi>t</mi><mo>,</mo><mi>i</mi></mrow></msub></mfrac><mo>=</mo><mfrac><mrow><msub><mi>σ</mi><mrow><mi>s</mi><mn>0</mn><mo>,</mo><mi>i</mi></mrow></msub><msub><mi>ϕ</mi><mi>i</mi></msub><mo>+</mo><msub><mi>S</mi><mrow><mi>e</mi><mi>x</mi><mi>t</mi><mo>,</mo><mi>i</mi></mrow></msub></mrow><msub><mi>σ</mi><mrow><mi>t</mi><mo>,</mo><mi>i</mi></mrow></msub></mfrac></mrow></math>`,
+        liveFn: (r) => `Valor na ${r.name}: S_ext = ${r.sext.toFixed(2)} n/(cm³·s) | Partículas nascidas da fonte extra na animação: ${stats.ext}`
+      },
+      psi: {
+        badge: 'Incógnita Fundamental (Eq. 1)',
+        title: 'Fluxo Angular ψ(x, μ) e Fluxo Direcional Discreto ψₘ(x)',
+        units: 'n · cm⁻² · s⁻¹',
+        eqNum: '(1)',
+        desc: 'É a grandeza fundamental da Equação de Transporte de Boltzmann (Eq. 1): mede o fluxo angular neutrônico na coordenada espacial x ∈ [0, L] viajando na direção de cosseno polar μ = cos(θ) ∈ [−1, 1]. Na discretização S_N, é avaliada nas N direções ordinárias ψₘ(x) = ψ(x, μₘ).',
+        mathml: `<math display="block"><mrow><mi>μ</mi><mfrac><mrow><mo>∂</mo><mi>ψ</mi><mo>(</mo><mi>x</mi><mo>,</mo><mi>μ</mi><mo>)</mo></mrow><mrow><mo>∂</mo><mi>x</mi></mrow></mfrac><mo>+</mo><msub><mi>σ</mi><mi>t</mi></msub><mo>(</mo><mi>x</mi><mo>)</mo><mi>ψ</mi><mo>(</mo><mi>x</mi><mo>,</mo><mi>μ</mi><mo>)</mo><mo>=</mo><mfrac><mrow><msub><mi>σ</mi><mrow><mi>s</mi><mn>0</mn></mrow></msub><mo>(</mo><mi>x</mi><mo>)</mo></mrow><mn>2</mn></mfrac><msubsup><mo>∫</mo><mrow><mo>−</mo><mn>1</mn></mrow><mn>1</mn></msubsup><mi>ψ</mi><mo>(</mo><mi>x</mi><mo>,</mo><msup><mi>μ</mi><mo>′</mo></msup><mo>)</mo><mi>d</mi><msup><mi>μ</mi><mo>′</mo></msup><mo>+</mo><msub><mi>S</mi><mrow><mi>e</mi><mi>x</mi><mi>t</mi></mrow></msub><mo>(</mo><mi>x</mi><mo>)</mo></mrow></math>`,
+        liveFn: (r, sigt, c0, sol) => `Ordem atual: S_${config.snOrder} (${config.snOrder} direções discretas). Na borda direita (x = ${config.L} cm), o fluxo emergente na direção mais frontal é ψ_N(L) = ${sol.psiEdge[config.snOrder - 1][config.meshCells].toFixed(5)}.`
+      },
+      phi: {
+        badge: 'Fluxo Escalar Médio (Eq. 2)',
+        title: 'Fluxo Escalar ϕ(x) (Curva Verde Tracejada)',
+        units: 'n · cm⁻² · s⁻¹',
+        eqNum: '(2)',
+        desc: 'É o fluxo escalar médio angular normalizado definido nos relatórios: integra o fluxo angular ψ(x, μ) em todas as direções μ ∈ [−1, 1] e é aproximado na quadratura de Gauss-Legendre pela soma ponderada com pesos ωₘ (onde ∑ωₘ = 2).',
+        mathml: `<math display="block"><mrow><mi>ϕ</mi><mo>(</mo><mi>x</mi><mo>)</mo><mo>=</mo><mfrac><mn>1</mn><mn>2</mn></mfrac><msubsup><mo>∫</mo><mrow><mo>−</mo><mn>1</mn></mrow><mn>1</mn></msubsup><mi>ψ</mi><mo>(</mo><mi>x</mi><mo>,</mo><msup><mi>μ</mi><mo>′</mo></msup><mo>)</mo><mi>d</mi><msup><mi>μ</mi><mo>′</mo></msup><mo>≈</mo><mfrac><mn>1</mn><mn>2</mn></mfrac><munderover><mo>∑</mo><mrow><mi>m</mi><mo>=</mo><mn>1</mn></mrow><mi>N</mi></munderover><msub><mi>ω</mi><mi>m</mi></msub><msub><mi>ψ</mi><mi>m</mi></msub><mo>(</mo><mi>x</mi><mo>)</mo></mrow></math>`,
+        liveFn: (r, sigt, c0, sol) => {
+          const midIdx = Math.floor(config.meshCells / 2);
+          return `Valores Calculados (SC, I=${config.meshCells}): ϕ(0) = ${sol.phiEdge[0].toFixed(4)} | ϕ(${(config.L/2).toFixed(0)} cm) = ${sol.phiEdge[midIdx].toFixed(4)} | ϕ(${config.L} cm) = ${sol.phiEdge[config.meshCells].toFixed(4)}`;
+        }
+      },
+      quad: {
+        badge: 'Quadraturas S₂ e S₄ (Eq. 3 e 4)',
+        title: 'Quadratura de Gauss-Legendre: Direções μₘ e Pesos ωₘ',
+        units: 'Adimensional (μₘ ∈ (−1, 1) e ∑ ωₘ = 2)',
+        eqNum: '(3)',
+        desc: 'Converte o contínuo angular μ ∈ [−1, 1] em um conjunto finito e simétrico de N direções ordinárias {μₘ} com pesos {ωₘ} tais que ∑ωₘ = 2. No trabalho utilizam-se as ordens S₂ (2 direções: ±1/√3) e S₄ (4 direções).',
+        mathml: `<math display="block"><mrow><msub><mi>S</mi><mn>2</mn></msub><mo>:</mo><mspace width="0.4em"></mspace><msub><mi>μ</mi><mrow><mn>1</mn><mo>,</mo><mn>2</mn></mrow></msub><mo>=</mo><mo>±</mo><mfrac><mn>1</mn><msqrt><mn>3</mn></msqrt></mfrac><mo>≈</mo><mo>±</mo><mn>0,577350</mn><mo>,</mo><mspace width="0.6em"></mspace><msub><mi>ω</mi><mrow><mn>1</mn><mo>,</mo><mn>2</mn></mrow></msub><mo>=</mo><mn>1,0</mn><mspace width="1.1em"></mspace><mo>|</mo><mspace width="1.1em"></mspace><munderover><mo>∑</mo><mrow><mi>m</mi><mo>=</mo><mn>1</mn></mrow><mi>N</mi></munderover><msub><mi>ω</mi><mi>m</mi></msub><mo>=</mo><mn>2</mn></mrow></math>`,
+        liveFn: () => `Quadratura Ativa: S_${config.snOrder} com μ = [${QUADS[config.snOrder].mu.map(v => v.toFixed(4)).join(', ')}] e soma dos pesos ∑ωₘ = ${QUADS[config.snOrder].w.reduce((a,b)=>a+b,0).toFixed(4)}.`
+      },
+      sigt: {
+        badge: 'Propriedade Macroscópica (Eq. 9)',
+        title: 'Seção de Choque Macroscópica de Remoção Total σ_t(x)',
+        units: 'cm⁻¹',
+        eqNum: '(9)',
+        desc: 'Mede a probabilidade por unidade de comprimento (cm⁻¹) de um nêutron sofrer colisão no meio (espalhamento ou absorção). Conforme a Eq. (9) do Relatório 1, é a soma de σ_{s0}(x) e σ_a(x), e seu inverso define o livre caminho médio λ_{mfp}.',
+        mathml: `<math display="block"><mrow><msub><mi>σ</mi><mi>t</mi></msub><mo>(</mo><mi>x</mi><mo>)</mo><mo>=</mo><msub><mi>σ</mi><mrow><mi>s</mi><mn>0</mn></mrow></msub><mo>(</mo><mi>x</mi><mo>)</mo><mo>+</mo><msub><mi>σ</mi><mi>a</mi></msub><mo>(</mo><mi>x</mi><mo>)</mo><mo>=</mo><mfrac><mn>1</mn><mrow><msub><mi>λ</mi><mrow><mi>m</mi><mi>f</mi><mi>p</mi></mrow></msub><mo>(</mo><mi>x</mi><mo>)</mo></mrow></mfrac></mrow></math>`,
+        liveFn: (r, sigt) => `Na ${r.name}: σ_t = ${r.sigs.toFixed(2)} + ${r.siga.toFixed(2)} = ${sigt.toFixed(2)} cm⁻¹ (Livre caminho médio λ_mfp = ${(1/sigt).toFixed(2)} cm).`
+      },
+      sigs: {
+        badge: 'Termo de Espalhamento (Eq. 1)',
+        title: 'Seção de Choque de Espalhamento Isotrópico σ_{s0}(x) (Partículas Azuis)',
+        units: 'cm⁻¹',
+        eqNum: '(1)',
+        desc: 'Mede a probabilidade por centímetro de o nêutron sofrer espalhamento isotrópico no laboratório, permanecendo no meio em uma nova direção sorteada uniformemente em μ ∈ [−1, 1]. Alimenta o termo integral de fonte de espalhamento σ_{s0}(x)ϕ(x).',
+        mathml: `<math display="block"><mrow><msub><mi>Q</mi><mrow><mi>e</mi><mi>s</mi><mi>p</mi></mrow></msub><mo>(</mo><mi>x</mi><mo>)</mo><mo>=</mo><mfrac><mrow><msub><mi>σ</mi><mrow><mi>s</mi><mn>0</mn></mrow></msub><mo>(</mo><mi>x</mi><mo>)</mo></mrow><mn>2</mn></mfrac><msubsup><mo>∫</mo><mrow><mo>−</mo><mn>1</mn></mrow><mn>1</mn></msubsup><mi>ψ</mi><mo>(</mo><mi>x</mi><mo>,</mo><msup><mi>μ</mi><mo>′</mo></msup><mo>)</mo><mi>d</mi><msup><mi>μ</mi><mo>′</mo></msup><mo>=</mo><msub><mi>σ</mi><mrow><mi>s</mi><mn>0</mn></mrow></msub><mo>(</mo><mi>x</mi><mo>)</mo><mi>ϕ</mi><mo>(</mo><mi>x</mi><mo>)</mo></mrow></math>`,
+        liveFn: (r, sigt) => `Na ${r.name}: σ_s0 = ${r.sigs.toFixed(2)} cm⁻¹ (${Math.round((r.sigs/sigt)*100)}% das colisões são espalhamentos). Total de espalhamentos na animação: ${stats.scat}.`
+      },
+      siga: {
+        badge: 'Captura / Remoção Líquida (Eq. 9)',
+        title: 'Seção de Choque Macroscópica de Absorção σ_a(x) (Flash Vermelho)',
+        units: 'cm⁻¹',
+        eqNum: '(9)',
+        desc: 'Diferença entre a seção de choque total e a seção de choque de espalhamento (σ_a = σ_t − σ_{s0}). Representa a probabilidade por centímetro de captura do nêutron pelo meio. Na equação de difusão equivalente S₂ (Eq. 17 do Relatório 1), governa a remoção −D d²ϕ/dx² + σ_a ϕ = 0.',
+        mathml: `<math display="block"><mrow><msub><mi>σ</mi><mi>a</mi></msub><mo>(</mo><mi>x</mi><mo>)</mo><mo>=</mo><msub><mi>σ</mi><mi>t</mi></msub><mo>(</mo><mi>x</mi><mo>)</mo><mo>−</mo><msub><mi>σ</mi><mrow><mi>s</mi><mn>0</mn></mrow></msub><mo>(</mo><mi>x</mi><mo>)</mo><mo>,</mo><mspace width="1.2em"></mspace><mo>−</mo><mi>D</mi><mfrac><mrow><msup><mi>d</mi><mn>2</mn></msup><mi>ϕ</mi><mo>(</mo><mi>x</mi><mo>)</mo></mrow><mrow><mi>d</mi><msup><mi>x</mi><mn>2</mn></msup></mrow></mfrac><mo>+</mo><msub><mi>σ</mi><mi>a</mi></msub><mi>ϕ</mi><mo>(</mo><mi>x</mi><mo>)</mo><mo>=</mo><mn>0</mn></mrow></math>`,
+        liveFn: (r, sigt, c0, sol) => `Na ${r.name}: σ_a = ${r.siga.toFixed(2)} cm⁻¹ (${Math.round((r.siga/sigt)*100)}% de absorção por colisão) | Taxa de absorção integrada na placa: ${sol.totalAbs.toFixed(4)}.`
+      },
+      nusf: {
+        badge: 'Produção por Fissão (Projeto 2, Eq. 1)',
+        title: 'Seção de Choque de Produção de Fissão νσ_f(x) (Partículas Douradas)',
+        units: 'cm⁻¹',
+        eqNum: '(P2-1)',
+        desc: 'Produto do número médio de nêutrons emitidos por fissão (ν) pela seção de choque macroscópica de fissão (σ_f). No Relatório do Projeto 2 (Eq. 1 e Eq. 6), compõe o termo de fonte multiplicativa dividido pelo autovalor k_{eff}.',
+        mathml: `<math display="block"><mrow><msub><mi>Q</mi><mrow><mi>t</mi><mi>o</mi><mi>t</mi><mi>a</mi><mi>l</mi><mo>,</mo><mi>i</mi></mrow></msub><mo>=</mo><msub><mi>σ</mi><mrow><mi>s</mi><mn>0</mn><mo>,</mo><mi>i</mi></mrow></msub><msub><mi>ϕ</mi><mi>i</mi></msub><mo>+</mo><mfrac><mn>1</mn><msub><mi>k</mi><mrow><mi>e</mi><mi>f</mi><mi>f</mi></mrow></msub></mfrac><mi>ν</mi><msub><mi>σ</mi><mrow><mi>f</mi><mo>,</mo><mi>i</mi></mrow></msub><msub><mi>ϕ</mi><mi>i</mi></msub></mrow></math>`,
+        liveFn: (r, sigt, c0, sol) => `Na ${r.name}: νσ_f = ${r.nusf.toFixed(2)} cm⁻¹ | Produção efetiva νσ_f / k_eff = ${(r.nusf / config.keff).toFixed(3)} cm⁻¹ | Produção integrada no reator: ${sol.totalFissProd.toFixed(4)}.`
+      },
+      keff: {
+        badge: 'Autovalor Fundamental (Projeto 2, Eq. 12)',
+        title: 'Fator Efetivo de Multiplicação k_{eff}',
+        units: 'Adimensional',
+        eqNum: '(P2-12)',
+        desc: 'Autovalor fundamental do problema de criticidade no Projeto 2. É atualizado a cada iteração externa ℓ do Método das Potências (Power Iteration) integrando a produção total de fissão nas I células da malha.',
+        mathml: `<math display="block"><mrow><msup><mi>P</mi><mrow><mo>(</mo><mi>ℓ</mi><mo>)</mo></mrow></msup><mo>=</mo><munderover><mo>∑</mo><mrow><mi>i</mi><mo>=</mo><mn>1</mn></mrow><mi>I</mi></munderover><mi>ν</mi><msub><mi>σ</mi><mrow><mi>f</mi><mo>,</mo><mi>i</mi></mrow></msub><msubsup><mi>ϕ</mi><mi>i</mi><mrow><mo>(</mo><mi>ℓ</mi><mo>)</mo></mrow></msubsup><msub><mi>h</mi><mi>i</mi></msub><mspace width="0.8em"></mspace><mo>⟹</mo><mspace width="0.8em"></mspace><msubsup><mi>k</mi><mrow><mi>e</mi><mi>f</mi><mi>f</mi></mrow><mrow><mo>(</mo><mi>ℓ</mi><mo>)</mo></mrow></msubsup><mo>=</mo><msubsup><mi>k</mi><mrow><mi>e</mi><mi>f</mi><mi>f</mi></mrow><mrow><mo>(</mo><mi>ℓ</mi><mo>−</mo><mn>1</mn><mo>)</mo></mrow></msubsup><mo>⋅</mo><msup><mi>P</mi><mrow><mo>(</mo><mi>ℓ</mi><mo>)</mo></mrow></msup></mrow></math>`,
+        liveFn: (r, sigt, c0, sol) => `k_eff selecionado no slider = ${config.keff.toFixed(3)} | k_eff crítico convergido pelo solver determinístico S_${config.snOrder} = ${sol.keffConverged.toFixed(5)}.`
+      },
+      c0: {
+        badge: 'Razão de Multiplicação Secundária',
+        title: 'Número Médio de Nêutrons Secundários por Colisão c₀',
+        units: 'Adimensional',
+        eqNum: '(7)',
+        desc: 'Indica quantos nêutrons emergem em média por colisão no meio. Determina a natureza física e espectral da solução: para c₀ < 1 os autovalores são reais e o fluxo decai exponencialmente; para c₀ > 1 os autovalores são imaginários puros e o fluxo apresenta curvatura trigonométrica (buckling).',
+        mathml: `<math display="block"><mrow><msub><mi>c</mi><mn>0</mn></msub><mo>(</mo><mi>x</mi><mo>)</mo><mo>=</mo><mfrac><mrow><msub><mi>σ</mi><mrow><mi>s</mi><mn>0</mn></mrow></msub><mo>(</mo><mi>x</mi><mo>)</mo><mo>+</mo><mi>ν</mi><msub><mi>σ</mi><mi>f</mi></msub><mo>(</mo><mi>x</mi><mo>)</mo><mo>/</mo><msub><mi>k</mi><mrow><mi>e</mi><mi>f</mi><mi>f</mi></mrow></msub></mrow><mrow><msub><mi>σ</mi><mi>t</mi></msub><mo>(</mo><mi>x</mi><mo>)</mo></mrow></mfrac></mrow></math>`,
+        liveFn: (r, sigt, c0) => `Na ${r.name}: c₀ = (${r.sigs.toFixed(2)} + ${(r.nusf/config.keff).toFixed(3)}) / ${sigt.toFixed(2)} = ${c0.toFixed(4)} → Regime ${c0 < 0.999 ? 'Subcrítico/Atenuador (c₀ < 1)' : Math.abs(c0-1)<=0.001 ? 'Conservativo (c₀ = 1)' : 'Multiplicativo (c₀ > 1)'}.`
+      },
+      mfp: {
+        badge: 'Escala Física Real & Monte Carlo',
+        title: 'Livre Caminho Médio λ_{mfp} e Passo Estocástico s = −ln(ξ)/σ_t',
+        units: 'cm (centímetros reais)',
+        eqNum: '(7)',
+        desc: 'Pela Lei de Atenuação de Beer-Lambert, a distância livre s percorrida por um nêutron entre colisões segue a distribuição exponencial P(s) = σ_t exp(−σ_t s). O valor médio de todos os voos livres converge exatamente para λ_{mfp} = 1/σ_t.',
+        mathml: `<math display="block"><mrow><mi>τ</mi><mo>=</mo><mo>−</mo><mi>ln</mi><mo>(</mo><mi>ξ</mi><mo>)</mo><mo>,</mo><mspace width="1.1em"></mspace><mi>s</mi><mo>=</mo><mfrac><mrow><mo>−</mo><mi>ln</mi><mo>(</mo><mi>ξ</mi><mo>)</mo></mrow><msub><mi>σ</mi><mi>t</mi></msub></mfrac><mo>,</mo><mspace width="1.1em"></mspace><msub><mi>λ</mi><mrow><mi>m</mi><mi>f</mi><mi>p</mi></mrow></msub><mo>=</mo><msubsup><mo>∫</mo><mn>0</mn><mi>∞</mi></msubsup><mi>s</mi><msub><mi>σ</mi><mi>t</mi></msub><msup><mi>e</mi><mrow><mo>−</mo><msub><mi>σ</mi><mi>t</mi></msub><mi>s</mi></mrow></msup><mi>d</mi><mi>s</mi><mo>=</mo><mfrac><mn>1</mn><msub><mi>σ</mi><mi>t</mi></msub></mfrac></mrow></math>`,
+        liveFn: (r, sigt) => `Na ${r.name} (σ_t = ${sigt.toFixed(2)} cm⁻¹): Livre caminho médio λ_mfp = ${(1/sigt).toFixed(2)} cm. Em uma placa de L = ${config.L} cm, a espessura óptica é de ${(config.L * sigt).toFixed(1)} livres caminhos médios!`
+      },
+      wdd: {
+        badge: 'Discretização Espacial (Eq. 6 a 8)',
+        title: 'Espessura Óptica Celular α_{m,i}^x e Pesos WDD β_{m,i} (DD, Step e SC)',
+        units: 'Adimensionais',
+        eqNum: '(4)',
+        desc: 'Unifica os três esquemas espaciais dos Projetos 1 e 2: Diamond Difference (β = 0, 2ª ordem, oscila se |α| > 2), Step (β = 1, 1ª ordem, positivo mas difusivo) e Step Characteristic (SC, solução analítica exata na célula constante).',
+        mathml: `<math display="block"><mrow><msub><mi>ψ</mi><mrow><mi>m</mi><mo>,</mo><mi>i</mi></mrow></msub><mo>=</mo><mfrac><mrow><mn>1</mn><mo>+</mo><msub><mi>β</mi><mrow><mi>m</mi><mo>,</mo><mi>i</mi></mrow></msub></mrow><mn>2</mn></mfrac><msub><mi>ψ</mi><mrow><mi>o</mi><mi>u</mi><mi>t</mi></mrow></msub><mo>+</mo><mfrac><mrow><mn>1</mn><mo>−</mo><msub><mi>β</mi><mrow><mi>m</mi><mo>,</mo><mi>i</mi></mrow></msub></mrow><mn>2</mn></mfrac><msub><mi>ψ</mi><mrow><mi>i</mi><mi>n</mi></mrow></msub><mo>,</mo><mspace width="1.1em"></mspace><msubsup><mi>β</mi><mrow><mi>m</mi><mo>,</mo><mi>i</mi></mrow><mrow><mi>S</mi><mi>C</mi></mrow></msubsup><mo>=</mo><mi>coth</mi><mrow><mo>(</mo><mfrac><mrow><mo>|</mo><msubsup><mi>α</mi><mrow><mi>m</mi><mo>,</mo><mi>i</mi></mrow><mi>x</mi></msubsup><mo>|</mo></mrow><mn>2</mn></mfrac><mo>)</mo></mrow><mo>−</mo><mfrac><mn>2</mn><mrow><mo>|</mo><msubsup><mi>α</mi><mrow><mi>m</mi><mo>,</mo><mi>i</mi></mrow><mi>x</mi></msubsup><mo>|</mo></mrow></mfrac></mrow></math>`,
+        liveFn: (r, sigt) => {
+          const h = config.L / config.meshCells;
+          const muMin = Math.abs(QUADS[config.snOrder].mu[0]);
+          const alphaMax = (h * sigt) / muMin;
+          const betaSC = calcBeta('SC', alphaMax);
+          return `Malha atual: I = ${config.meshCells} células (h = ${h.toFixed(2)} cm) | Maior espessura óptica na ${r.name}: |α|_max = ${alphaMax.toFixed(3)} ${alphaMax > 2 ? '(⚠️ |α| > 2: DD pode oscilar!)' : '(|α| < 2: DD estável)'} | Peso exato β_SC = ${betaSC.toFixed(4)}.`;
+        }
+      },
+      espectro: {
+        badge: 'Dedução Analítica S₂/S₄ (Seção 2.2)',
+        title: 'Matriz Espectral A, Lei de Fick e Autovalores λ_k',
+        units: 'Autovalores em cm⁻¹ | Coef. de Difusão D em cm',
+        eqNum: '(5)',
+        desc: 'No Relatório 1 (Eq. 16 e 17), a soma e subtração das equações S₂ recupera a Lei de Fick J(x) = −2D dϕ/dx com D = 1/(3σ_t) e autovalores λ = ±√(3σ_t σ_a) = ±σ_t√(3(1−c₀)). Em meios multiplicativos com c₀ > 1, os autovalores tornam-se imaginários puros.',
+        mathml: `<math display="block"><mrow><mi>J</mi><mo>(</mo><mi>x</mi><mo>)</mo><mo>=</mo><mo>−</mo><mfrac><mrow><mn>2</mn><msubsup><mi>μ</mi><mn>0</mn><mn>2</mn></msubsup></mrow><msub><mi>σ</mi><mi>t</mi></msub></mfrac><mfrac><mrow><mi>d</mi><mi>ϕ</mi><mo>(</mo><mi>x</mi><mo>)</mo></mrow><mrow><mi>d</mi><mi>x</mi></mrow></mfrac><mo>,</mo><mspace width="1.1em"></mspace><mi>D</mi><mo>≡</mo><mfrac><mn>1</mn><mrow><mn>3</mn><msub><mi>σ</mi><mi>t</mi></msub></mrow></mfrac><mo>,</mo><mspace width="1.1em"></mspace><msub><mi>λ</mi><mrow><mn>1</mn><mo>,</mo><mn>2</mn></mrow></msub><mo>=</mo><mo>±</mo><msub><mi>σ</mi><mi>t</mi></msub><msqrt><mrow><mn>3</mn><mo>(</mo><mn>1</mn><mo>−</mo><msub><mi>c</mi><mn>0</mn></msub><mo>)</mo></mrow></msqrt></mrow></math>`,
+        liveFn: (r, sigt, c0) => {
+          const disc = 3.0 * sigt * sigt * (1.0 - c0);
+          if (disc >= 0) return `Espectro S₂ na ${r.name}: Autovalores reais simétricos λ = ±${Math.sqrt(disc).toFixed(4)} cm⁻¹ | Coeficiente D = ${(1/(3*sigt)).toFixed(4)} cm.`;
+          return `Espectro S₂ na ${r.name} (c₀ > 1): Par imaginário puro λ = ±i·${Math.sqrt(-disc).toFixed(4)} cm⁻¹ (Buckling harmônico).`;
+        }
+      },
+      corrente: {
+        badge: 'Vazamento nas Fronteiras (Eq. 8)',
+        title: 'Correntes Parciais de Fuga J⁺(L) e J⁻(0)',
+        units: 'n · cm⁻² · s⁻¹',
+        eqNum: '(8)',
+        desc: 'Mede a taxa de nêutrons que escapam pelas extremidades da placa para o vácuo, ponderando os fluxos angulares emergentes ψₘ pelo cosseno direcional |μₘ| e pelo peso de quadratura ωₘ.',
+        mathml: `<math display="block"><mrow><msup><mi>J</mi><mo>+</mo></msup><mo>(</mo><mi>L</mi><mo>)</mo><mo>=</mo><munder><mo>∑</mo><mrow><msub><mi>μ</mi><mi>m</mi></msub><mo>&gt;</mo><mn>0</mn></mrow></munder><msub><mi>μ</mi><mi>m</mi></msub><msub><mi>ω</mi><mi>m</mi></msub><msub><mi>ψ</mi><mi>m</mi></msub><mo>(</mo><mi>L</mi><mo>)</mo><mo>,</mo><mspace width="1.4em"></mspace><msup><mi>J</mi><mo>−</mo></msup><mo>(</mo><mn>0</mn><mo>)</mo><mo>=</mo><munder><mo>∑</mo><mrow><msub><mi>μ</mi><mi>m</mi></msub><mo>&lt;</mo><mn>0</mn></mrow></munder><mo>|</mo><msub><mi>μ</mi><mi>m</mi></msub><mo>|</mo><msub><mi>ω</mi><mi>m</mi></msub><msub><mi>ψ</mi><mi>m</mi></msub><mo>(</mo><mn>0</mn><mo>)</mo></mrow></math>`,
+        liveFn: (r, sigt, c0, sol) => `Fuga Determinística Atual (SC): Fuga na fronteira direita J⁺(${config.L} cm) = ${sol.J_right.toFixed(5)} n/(cm²·s) | Fuga na fronteira esquerda J⁻(0) = ${sol.J_left.toFixed(5)} n/(cm²·s).`
+      },
+      regua: {
+        badge: 'Referência Geométrica no Canvas',
+        title: 'Régua Física de Escala (1 cm) e Livre Caminho Médio (λ_{mfp})',
+        units: 'cm (escala 1:1 no Canvas)',
+        eqNum: '(Esc)',
+        desc: 'No canto inferior direito de cada região da placa, o aplicativo desenha uma barra vermelha correspondente a exatamente 1 cm na escala atual do zoom, acompanhada da barra tracejada rosa de λ_{mfp} = 1/σ_t. Ao dar zoom (4x, 8x, 12x), ambas as barras crescem proporcionalmente.',
+        mathml: `<math display="block"><mrow><mi>Δ</mi><msub><mi>x</mi><mrow><mi>t</mi><mi>e</mi><mi>l</mi><mi>a</mi></mrow></msub><mo>(</mo><mn>1</mn><mtext> cm</mtext><mo>)</mo><mo>=</mo><mfrac><msub><mi>W</mi><mrow><mi>p</mi><mi>l</mi><mi>a</mi><mi>c</mi><mi>a</mi></mrow></msub><mrow><mi>L</mi><mo>/</mo><mtext>Zoom</mtext></mrow></mfrac><mo>,</mo><mspace width="1.2em"></mspace><msub><mi>λ</mi><mrow><mi>m</mi><mi>f</mi><mi>p</mi></mrow></msub><mo>=</mo><mfrac><mn>1</mn><msub><mi>σ</mi><mi>t</mi></msub></mfrac></mrow></math>`,
+        liveFn: (r, sigt) => `Zoom atual = ${camera.zoom.toFixed(1)}x | Janela visível = ${(config.L / camera.zoom).toFixed(1)} cm de um total de L = ${config.L} cm | Na ${r.name}, λ_mfp = ${(1/sigt).toFixed(2)} cm.`
+      }
+    };
+
+    function updateGlossaryCardUI() {
+      const item = GLOSSARY_DB[activeGlossaryKey] || GLOSSARY_DB.guia;
+      const r = config.regions[activeRegionIdx];
+      const sigt = Math.max(0.01, r.sigs + r.siga);
+      const effNusf = r.nusf / config.keff;
+      const c0 = (r.sigs + effNusf) / sigt;
+      const sol = cachedSolutions ? cachedSolutions.SC : { phiEdge: [0,0], psiEdge: [[0],[0],[0],[0]], totalAbs: 0, totalFissProd: 0, J_right: 0, J_left: 0, keffConverged: 1 };
+
+      document.getElementById('gl-badge').textContent = item.badge;
+      document.getElementById('gl-title').textContent = item.title;
+      document.getElementById('gl-units').textContent = `Unidade: ${item.units}`;
+      document.getElementById('gl-desc').textContent = item.desc;
+      document.getElementById('gl-live').textContent = item.liveFn(r, sigt, c0, sol);
+      document.getElementById('gl-math').innerHTML = item.mathml;
+      const eqNumEl = document.getElementById('gl-eq-num');
+      if (eqNumEl) eqNumEl.textContent = item.eqNum || '(1)';
+
+      document.querySelectorAll('.legend-chip').forEach(btn => {
+        btn.classList.toggle('active-chip', btn.getAttribute('data-glossary') === activeGlossaryKey);
+      });
+    }
+
+    function updateTheoryAndBalanceUI() {
+      if (!cachedSolutions) return;
+      const r = config.regions[activeRegionIdx];
+      const sigt = Math.max(0.01, r.sigs + r.siga);
+      const effNusf = r.nusf / config.keff;
+      const c0 = (r.sigs + effNusf) / sigt;
+
+      const disc = 3.0 * sigt * sigt * (1.0 - c0);
+      let eigStr = '';
+      if (disc > 1e-6) {
+        const lam = Math.sqrt(disc);
+        eigStr = `Autovalores Analíticos <i>S</i><sub>2</sub> Reais: <b>λ = ±${lam.toFixed(4)} cm⁻¹</b> (Modos exponenciais <i>e<sup>±λx</sup></i>)`;
+      } else if (Math.abs(disc) <= 1e-6) {
+        eigStr = `Autovalor Duplo Nulo: <b>λ = 0.0000 cm⁻¹</b> (Modo linear <i>Ax + B</i>)`;
+      } else {
+        const Bg = Math.sqrt(-disc);
+        eigStr = `Autovalores Imaginários Puros: <b>λ = ±i·${Bg.toFixed(4)} cm⁻¹</b> (Buckling harmônico <i>cos(${Bg.toFixed(3)}x)</i>)`;
+      }
+
+      const h = config.L / config.meshCells;
+      const muMin = Math.abs(QUADS[config.snOrder].mu[0]);
+      const alphaMax = (h * sigt) / muMin;
+      const betaSC = calcBeta('SC', alphaMax);
+
+      document.getElementById('spectral-box').innerHTML = `
+        <div>• <b>Região Selecionada (${r.name}):</b> <i>c</i><sub>0</sub> = (${r.sigs.toFixed(2)} + ${effNusf.toFixed(3)}) / ${sigt.toFixed(2)} = <b>${c0.toFixed(4)}</b></div>
+        <div>• ${eigStr}</div>
+        <div>• <b>Livre Caminho Médio Teórico:</b> λ<sub>mfp</sub> = 1 / σ<sub>t</sub> = <b>${(1 / sigt).toFixed(2)} cm</b></div>
+        <div>• <b>Parâmetros WDD na Malha (h = ${h.toFixed(2)} cm):</b> α<sub>máx</sub> = <b>${alphaMax.toFixed(3)}</b> | β<sub>SC</sub> = <b>${betaSC.toFixed(4)}</b></div>
+      `;
+
+      const sol = cachedSolutions.SC;
+      document.getElementById('balance-box').innerHTML = `
+        <div class="p-1.5 rounded bg-[var(--card)] border border-[var(--border)]">
+          <div class="text-[var(--muted-foreground)]">Absorção Integrada</div>
+          <div class="font-bold text-red-400 text-xs">${sol.totalAbs.toFixed(4)}</div>
+        </div>
+        <div class="p-1.5 rounded bg-[var(--card)] border border-[var(--border)]">
+          <div class="text-[var(--muted-foreground)]">Produção Fissão</div>
+          <div class="font-bold text-amber-400 text-xs">${sol.totalFissProd.toFixed(4)}</div>
+        </div>
+        <div class="p-1.5 rounded bg-[var(--card)] border border-[var(--border)]">
+          <div class="text-[var(--muted-foreground)]">Fuga Direita J⁺(L)</div>
+          <div class="font-bold text-purple-400 text-xs">${sol.J_right.toFixed(4)}</div>
+        </div>
+        <div class="p-1.5 rounded bg-[var(--card)] border border-[var(--border)]">
+          <div class="text-[var(--muted-foreground)]">k_eff Convergido</div>
+          <div class="font-bold text-emerald-400 text-xs">${sol.keffConverged.toFixed(5)}</div>
+        </div>
+      `;
+
+      updateGlossaryCardUI();
+    }
+
+    // =========================================================================
+    // 7. CONTROLES DOM, INTERAÇÃO DE ZOOM E LOOP PRINCIPAL
+    // =========================================================================
+    const presetSelect = document.getElementById('preset-select');
+    const sliderSpeed = document.getElementById('slider-speed');
+    const valSpeed = document.getElementById('val-speed');
+    const sliderZoom = document.getElementById('slider-zoom');
+    const valZoom = document.getElementById('val-zoom');
+    const chkFollowCam = document.getElementById('chk-follow-cam');
+
+    const btnPlay = document.getElementById('btn-play');
+    const btnStep = document.getElementById('btn-step');
+    const btnReset = document.getElementById('btn-reset');
+    const btnProjector = document.getElementById('btn-projector');
+    const btnTheme = document.getElementById('btn-theme');
+    const btnFullscreen = document.getElementById('btn-fullscreen');
+    const btnExportPng = document.getElementById('btn-export-png');
+    const btnExportCsv = document.getElementById('btn-export-csv');
+
+    const selectGeomMode = document.getElementById('select-geom-mode');
+    const regTabs = document.querySelectorAll('.reg-tab');
+    const sliderSigs = document.getElementById('slider-sigs');
+    const sliderSiga = document.getElementById('slider-siga');
+    const chkLockSum = document.getElementById('chk-lock-sum');
+    const btnForceSigt1 = document.getElementById('btn-force-sigt1');
+    const sliderKeff = document.getElementById('slider-keff');
+    const btnKeffOne = document.getElementById('btn-keff-one');
+    const btnKeffAuto = document.getElementById('btn-keff-auto');
+    const sliderNusf = document.getElementById('slider-nusf');
+    const sliderSext = document.getElementById('slider-sext');
+    const selectBcLeft = document.getElementById('select-bc-left');
+    const selectBcRight = document.getElementById('select-bc-right');
+    const chkTrackNeutron = document.getElementById('chk-track-neutron');
+    const chkFluxCurve = document.getElementById('chk-flux-curve');
+    const chkSnRays = document.getElementById('chk-sn-rays');
+    const btnSpawnTracked = document.getElementById('btn-spawn-tracked');
+
+    const selectChartType = document.getElementById('select-chart-type');
+    const selectSnOrder = document.getElementById('select-sn-order');
+    const selectMeshCells = document.getElementById('select-mesh-cells');
+
+    function setZoomLevel(newZ) {
+      camera.zoom = Math.max(1.0, Math.min(12.0, newZ));
+      sliderZoom.value = camera.zoom;
+      valZoom.textContent = `${camera.zoom.toFixed(1)}x`;
+      if (camera.zoom > 1.01 && trackedParticle && trackedParticle.isAlive) {
+        camera.centerX_cm = trackedParticle.x_cm;
+      }
+    }
+
+    sliderZoom.addEventListener('input', (e) => {
+      setZoomLevel(parseFloat(e.target.value));
+    });
+
+    document.querySelectorAll('.zoom-preset').forEach(btn => {
+      btn.addEventListener('click', () => {
+        setZoomLevel(parseFloat(btn.getAttribute('data-z')));
+      });
+    });
+
+    chkFollowCam.addEventListener('change', (e) => {
+      camera.followTracked = e.target.checked;
+    });
+
+    // Zoom com roda do mouse direto sobre o Canvas da Placa!
+    slabCanvas.addEventListener('wheel', (e) => {
+      e.preventDefault();
+      const delta = e.deltaY < 0 ? 0.5 : -0.5;
+      setZoomLevel(camera.zoom + delta);
+    }, { passive: false });
+
+    // Arrastar câmera (Pan) quando em Zoom > 1x e clicar em nêutron
+    slabCanvas.addEventListener('mousedown', (e) => {
+      const rect = slabCanvas.getBoundingClientRect();
+      const mx = e.clientX - rect.left;
+      const my = e.clientY - rect.top;
+      const w = rect.width || 700;
+      const H_cm = getSlabHeightCm(w);
+
+      // Verificar se clicou sobre algum nêutron para segui-lo
+      let closest = null, minDist = 22;
+      for (let p of particles) {
+        const px = cmToScreenX(p.x_cm, w);
+        const py = yCmToScreenY(p.y_cm, H_cm);
+        const d = Math.hypot(px - mx, py - my);
+        if (d < minDist) { minDist = d; closest = p; }
+      }
+      if (closest) {
+        config.trackEnabled = true;
+        chkTrackNeutron.checked = true;
+        closest.promoteToTracked();
+        updateStatsUI();
+        return;
+      }
+
+      // Se não clicou em nêutron, iniciar arraste horizontal (Pan)
+      if (camera.zoom > 1.01) {
+        camera.isDragging = true;
+        camera.followTracked = false;
+        chkFollowCam.checked = false;
+        camera.dragStartX_px = mx;
+        camera.dragStartCenter_cm = camera.centerX_cm;
+      }
+    });
+
+    window.addEventListener('mousemove', (e) => {
+      if (!camera.isDragging) return;
+      const rect = slabCanvas.getBoundingClientRect();
+      const mx = e.clientX - rect.left;
+      const slabW_px = (rect.width || 700) * (slabEndRatio - slabStartRatio);
+      const visSpanCm = config.L / camera.zoom;
+      const dx_cm = -((mx - camera.dragStartX_px) / slabW_px) * visSpanCm;
+      camera.centerX_cm = camera.dragStartCenter_cm + dx_cm;
+    });
+
+    window.addEventListener('mouseup', () => {
+      camera.isDragging = false;
+    });
+
+    function updateStatsUI() {
+      document.getElementById('stat-inc').textContent = stats.inc;
+      document.getElementById('stat-ext').textContent = stats.ext;
+      document.getElementById('stat-scat').textContent = stats.scat;
+      document.getElementById('stat-fiss').textContent = stats.fiss;
+      document.getElementById('stat-abs-leak').textContent = `${stats.abs} / ${stats.leak}`;
+
+      const trackerStatus = document.getElementById('tracker-status');
+      const trackerCols = document.getElementById('tracker-cols');
+      const statTrackedMu = document.getElementById('stat-tracked-mu');
+
+      if (!config.trackEnabled) {
+        trackerStatus.textContent = 'Rastreamento desligado';
+        trackerCols.textContent = '';
+        statTrackedMu.textContent = 'Off';
+        return;
+      }
+
+      if (trackedParticle && trackedParticle.isAlive) {
+        const xi = Math.max(0, Math.min(1, trackedParticle.x_cm / config.L));
+        const mat = getMaterialAtXi(xi);
+        const muVal = Math.cos(trackedParticle.angle);
+        const meanStep = trackedParticle.collisions > 0
+          ? (trackedParticle.totalPath_cm / trackedParticle.collisions).toFixed(2)
+          : trackedParticle.totalPath_cm.toFixed(2);
+
+        trackerStatus.textContent = `x=${trackedParticle.x_cm.toFixed(1)}cm (${mat.zoneLabel} | λ_teo=${(1 / mat.sigt).toFixed(2)}cm)`;
+        trackerCols.textContent = `Col: ${trackedParticle.collisions} | ⟨s⟩=${meanStep}cm`;
+        statTrackedMu.textContent = `${muVal >= 0 ? '+' : ''}${muVal.toFixed(2)}`;
+      } else {
+        trackerStatus.textContent = lastTrackedOutcome || 'Aguardando novo nêutron guia...';
+        statTrackedMu.textContent = '—';
+      }
+    }
+
+    function syncUI() {
+      const tabNames = config.geomMode === 'single'
+        ? ['Placa Homogênea', '', '']
+        : config.geomMode === 'three_abc'
+          ? ['Região A', 'Região B', 'Região C']
+          : ['Refletor', 'Fuel 2', 'Fuel 1'];
+
+      regTabs.forEach((btn, idx) => {
+        if (config.geomMode === 'single' && idx > 0) {
+          btn.classList.add('hidden');
+        } else {
+          btn.classList.remove('hidden');
+          btn.textContent = tabNames[idx];
+        }
+        btn.className = idx === activeRegionIdx
+          ? 'reg-tab px-2 py-0.5 rounded text-[11px] font-bold bg-blue-600 text-white'
+          : 'reg-tab px-2 py-0.5 rounded text-[11px] font-medium bg-[var(--background)] border border-[var(--border)] hover:bg-[var(--card-border)]' + ((config.geomMode === 'single' && idx > 0) ? ' hidden' : '');
+      });
+
+      const r = config.regions[activeRegionIdx];
+      r.name = tabNames[activeRegionIdx];
+      const tag = `(${r.name})`;
+      document.getElementById('lbl-reg-sigs').textContent = tag;
+      document.getElementById('lbl-reg-siga').textContent = tag;
+      document.getElementById('lbl-reg-nusf').textContent = tag;
+      document.getElementById('lbl-reg-sext').textContent = tag;
+
+      const sigt = Math.max(0.01, r.sigs + r.siga);
+      r.sigt = sigt;
+
+      const maxSlider = config.lockSum ? sigt.toFixed(2) : '1.20';
+      sliderSigs.max = maxSlider;
+      sliderSiga.max = maxSlider;
+
+      sliderSigs.value = r.sigs;
+      sliderSiga.value = r.siga;
+      sliderNusf.value = r.nusf;
+      sliderSext.value = r.sext;
+      sliderKeff.value = config.keff;
+
+      const pctSigs = Math.round((r.sigs / sigt) * 100);
+      const pctSiga = Math.round((r.siga / sigt) * 100);
+
+      document.getElementById('val-sigs').textContent = `${r.sigs.toFixed(2)} cm⁻¹ (${pctSigs}%)`;
+      document.getElementById('val-siga').textContent = `${r.siga.toFixed(2)} cm⁻¹ (${pctSiga}%)`;
+      document.getElementById('val-nusf').textContent = `${r.nusf.toFixed(2)} cm⁻¹`;
+      document.getElementById('val-sext').textContent = `${r.sext.toFixed(1)} n/(cm³·s)`;
+      document.getElementById('val-keff').textContent = config.keff.toFixed(3);
+      document.getElementById('sigmat-readout').textContent = `σt = ${sigt.toFixed(2)}`;
+
+      const effNusf = r.nusf / config.keff;
+      const c0 = (r.sigs + effNusf) / sigt;
+      document.getElementById('c0-readout').textContent = `c₀ ${tag} = ${c0.toFixed(3)}`;
+
+      const regimeBadge = document.getElementById('regime-badge');
+      if (c0 < 0.999) {
+        regimeBadge.textContent = `${r.name}: Atenuador (c₀ = ${c0.toFixed(3)} < 1)`;
+        regimeBadge.className = 'px-2 py-0.5 rounded-full text-[11px] font-semibold bg-blue-500/15 text-blue-400 border border-blue-500/30';
+      } else if (Math.abs(c0 - 1.0) <= 0.001) {
+        regimeBadge.textContent = `${r.name}: Conservativo (c₀ = 1.000)`;
+        regimeBadge.className = 'px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30';
+      } else {
+        regimeBadge.textContent = `${r.name}: Multiplicativo (c₀ = ${c0.toFixed(3)} > 1)`;
+        regimeBadge.className = 'px-2 py-0.5 rounded-full text-[11px] font-semibold bg-amber-500/15 text-amber-400 border border-amber-500/30';
+      }
+
+      const badgeLeft = document.getElementById('badge-left');
+      const badgeRight = document.getElementById('badge-right');
+      if (config.bcLeft === 'isotropic') {
+        badgeLeft.textContent = 'x = 0 cm: Fonte Prescrita (ψ = 1.0)';
+      } else if (config.bcLeft === 'reflective') {
+        badgeLeft.textContent = 'x = 0 cm: Reflexiva (Espelho)';
+      } else {
+        badgeLeft.textContent = 'x = 0 cm: Vácuo (ψ = 0)';
+      }
+      badgeRight.textContent = config.bcRight === 'vacuum'
+        ? `x = ${config.L} cm: Vácuo (Fuga)`
+        : `x = ${config.L} cm: Reflexiva (Espelho)`;
+
+      document.getElementById('chart-keff-badge').textContent =
+        `Malha: I = ${config.meshCells} células (h = ${(config.L / config.meshCells).toFixed(2)} cm)`;
+
+      recomputeAllSolutions();
+
+      document.getElementById('info-box').innerHTML =
+        `<b class="text-[var(--foreground)]">Escala Física Exata + Zoom Interativo:</b> Os nêutrons agora sorteiam o caminho óptico exato <b>s = −ln(ξ)/σ<sub>t</sub></b> em centímetros reais! Na visão <code>1x (Tudo)</code>, veja como o livre caminho médio de 1 cm é pequeno frente a placas de 50–100 cm; em seguida, clique em <b><code>4x</code> ou <code>8x (Micro)</code></b> (ou role a roda do mouse sobre a placa) para dar zoom e acompanhar de perto cada colisão do Nêutron Guia com a régua vermelha de <b>1 cm</b>!`;
+    }
+
+    function applyPreset(presetName) {
+      activeRegionIdx = 0;
+      if (presetName === 'proj1_hom') {
+        config.L = 100;
+        config.geomMode = 'single';
+        config.keff = 1.00;
+        config.bcLeft = 'isotropic';
+        config.bcRight = 'vacuum';
+        config.regions[0] = { name: 'Placa', sigt: 1.00, sigs: 0.97, siga: 0.03, nusf: 0.00, sext: 0.0 };
+      } else if (presetName === 'proj1_het') {
+        config.L = 50;
+        config.geomMode = 'three_abc';
+        config.keff = 1.00;
+        config.bcLeft = 'reflective';
+        config.bcRight = 'vacuum';
+        config.regions[0] = { name: 'Região A', sigt: 1.00, sigs: 0.99, siga: 0.01, nusf: 0.00, sext: 2.0 };
+        config.regions[1] = { name: 'Região B', sigt: 0.60, sigs: 0.40, siga: 0.20, nusf: 0.00, sext: 0.0 };
+        config.regions[2] = { name: 'Região C', sigt: 1.00, sigs: 0.90, siga: 0.10, nusf: 0.00, sext: 0.0 };
+      } else if (presetName === 'proj2_hom') {
+        config.L = 20;
+        config.geomMode = 'single';
+        config.keff = 0.878;
+        config.bcLeft = 'vacuum';
+        config.bcRight = 'vacuum';
+        config.regions[0] = { name: 'Reator', sigt: 1.00, sigs: 0.90, siga: 0.10, nusf: 0.11, sext: 0.0 };
+      } else if (presetName === 'proj2_super') {
+        config.L = 20;
+        config.geomMode = 'single';
+        config.keff = 1.00;
+        config.bcLeft = 'vacuum';
+        config.bcRight = 'vacuum';
+        config.regions[0] = { name: 'Reator', sigt: 1.00, sigs: 0.90, siga: 0.10, nusf: 0.13, sext: 0.0 };
+      } else if (presetName === 'proj2_het') {
+        config.L = 100;
+        config.geomMode = 'five_reactor';
+        config.keff = 0.961;
+        config.bcLeft = 'vacuum';
+        config.bcRight = 'vacuum';
+        config.regions[0] = { name: 'Refletor', sigt: 1.00, sigs: 0.90, siga: 0.10, nusf: 0.00, sext: 0.0 };
+        config.regions[1] = { name: 'Fuel 2',   sigt: 1.00, sigs: 0.50, siga: 0.50, nusf: 0.48, sext: 0.0 };
+        config.regions[2] = { name: 'Fuel 1',   sigt: 1.00, sigs: 0.50, siga: 0.50, nusf: 0.55, sext: 0.0 };
+        activeRegionIdx = 2;
+      }
+
+      camera.centerX_cm = config.L / 2.0;
+      selectGeomMode.value = config.geomMode;
+      selectBcLeft.value = config.bcLeft;
+      selectBcRight.value = config.bcRight;
+
+      syncUI();
+      seedInitialParticles();
+    }
+
+    let respawnTimer = 0;
+
+    function stepSimulationFrame(dtFactor) {
+      const rect = slabCanvas.getBoundingClientRect();
+      const w = rect.width || 700;
+
+      if (config.bcLeft === 'isotropic' && particles.length < MAX_PARTICLES) {
+        if (Math.random() < 0.28 * dtFactor) particles.push(new Particle('boundary'));
+      }
+
+      const maxSext = Math.max(...config.regions.map((r, i) => (config.geomMode === 'single' && i > 0) ? 0 : r.sext));
+      if (maxSext > 0 && particles.length < MAX_PARTICLES) {
+        if (Math.random() < Math.min(0.45, maxSext * 0.15 * dtFactor)) {
+          particles.push(new Particle('ext_source'));
+        }
+      }
+
+      const hasAnyFission = config.regions.some((r, i) => (config.geomMode === 'single' && i > 0) ? false : r.nusf > 0);
+      if (config.bcLeft !== 'isotropic' && maxSext === 0 && hasAnyFission) {
+        if (particles.length < 24 && Math.random() < 0.25 * dtFactor) {
+          particles.push(new Particle('fission'));
+        }
+      }
+
+      if (config.trackEnabled) {
+        if (!trackedParticle || !trackedParticle.isAlive) {
+          respawnTimer += dtFactor;
+          if (respawnTimer > 40) {
+            respawnTimer = 0;
+            spawnNewParticle(true);
+          }
+        } else {
+          respawnTimer = 0;
+        }
+      }
+
+      for (let i = 0; i < particles.length; i++) {
+        particles[i].update(w, dtFactor);
+      }
+      particles = particles.filter(p => p.isAlive);
+
+      effects.forEach(f => {
+        f.radius += (f.type === 'fission' ? 1.0 : 0.7) * dtFactor;
+        f.alpha -= 0.042 * dtFactor;
+      });
+      effects = effects.filter(f => f.alpha > 0);
+
+      updateStatsUI();
+    }
+
+    function animate() {
+      const rect = slabCanvas.getBoundingClientRect();
+      const w = rect.width || 700;
+      const h = 255;
+      const isDark = isDarkMode();
+      const H_cm = getSlabHeightCm(w);
+
+      ctx.clearRect(0, 0, w, h);
+
+      if (modulesVisible.diagram) {
+        drawStaticDiagram(w, h, isDark);
+      } else {
+        drawSlabBackground(w, h, isDark);
+
+        if (isRunning) {
+          stepSimulationFrame(simSpeed);
+        }
+
+        // Recortar partículas e flashes à janela da placa
+        ctx.save();
+        ctx.beginPath();
+        ctx.rect(w * 0.01, SLAB_TOP_PX, w * 0.98, SLAB_H_PX);
+        ctx.clip();
+
+        effects.forEach(f => {
+          const fx = cmToScreenX(f.x_cm, w);
+          const fy = yCmToScreenY(f.y_cm, H_cm);
+          ctx.beginPath();
+          ctx.arc(fx, fy, f.radius, 0, Math.PI * 2);
+          if (f.type === 'fission') {
+            ctx.strokeStyle = `rgba(245, 158, 11, ${f.alpha})`;
+            ctx.fillStyle = `rgba(251, 191, 36, ${f.alpha * 0.35})`;
+            ctx.fill();
+          } else if (f.type === 'tracked_scatter') {
+            ctx.strokeStyle = `rgba(236, 72, 153, ${f.alpha})`;
+          } else if (f.type === 'birth') {
+            ctx.strokeStyle = `rgba(6, 182, 212, ${f.alpha})`;
+          } else if (f.type === 'reflect') {
+            ctx.strokeStyle = `rgba(56, 189, 248, ${f.alpha})`;
+          } else {
+            ctx.strokeStyle = `rgba(239, 68, 68, ${f.alpha})`;
+          }
+          ctx.lineWidth = 2;
+          ctx.stroke();
+        });
+
+        particles.forEach(p => {
+          if (!p.isTracked) p.draw(ctx, w);
+        });
+        if (trackedParticle && trackedParticle.isAlive) {
+          trackedParticle.draw(ctx, w);
+        }
+        ctx.restore();
+      }
+
+      requestAnimationFrame(animate);
+    }
+
+    document.querySelectorAll('.module-pill').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const mod = btn.getAttribute('data-mod');
+        modulesVisible[mod] = !modulesVisible[mod];
+        btn.classList.toggle('active', modulesVisible[mod]);
+
+        if (mod === 'controls') {
+          document.getElementById('mod-controls').classList.toggle('hidden', !modulesVisible.controls);
+        } else if (mod === 'legend') {
+          document.getElementById('mod-legend').classList.toggle('hidden', !modulesVisible.legend);
+        } else if (mod === 'charts') {
+          document.getElementById('mod-charts').classList.toggle('hidden', !modulesVisible.charts);
+          if (modulesVisible.charts) setTimeout(resizeCanvases, 20);
+        } else if (mod === 'theory') {
+          document.getElementById('mod-theory').classList.toggle('hidden', !modulesVisible.theory);
+        }
+      });
+    });
+
+    // Clique em qualquer item da Legenda, Contador de Eventos ou Símbolo Matemático
+    document.querySelectorAll('.legend-chip').forEach(chip => {
+      chip.addEventListener('click', () => {
+        const key = chip.getAttribute('data-glossary');
+        if (!key) return;
+        activeGlossaryKey = key;
+        if (!modulesVisible.legend) {
+          modulesVisible.legend = true;
+          document.getElementById('mod-legend').classList.remove('hidden');
+          const legPill = document.querySelector('.module-pill[data-mod="legend"]');
+          if (legPill) legPill.classList.add('active');
+        }
+        updateGlossaryCardUI();
+      });
+    });
+
+    // Alternar Fundo Papel Clássico (PDF) vs Tema Escuro nas Equações
+    const btnPaperEq = document.getElementById('btn-paper-eq');
+    if (btnPaperEq) {
+      btnPaperEq.addEventListener('click', () => {
+        isPaperMode = !isPaperMode;
+        document.querySelectorAll('.doc-eq-box').forEach(box => {
+          box.classList.toggle('paper-mode', isPaperMode);
+        });
+        btnPaperEq.textContent = isPaperMode ? '📄 Fundo Documento (PDF)' : '🌙 Fundo Tema Escuro';
+        btnPaperEq.className = isPaperMode
+          ? 'px-2.5 py-1 rounded-lg bg-slate-100 text-slate-900 border border-slate-300 font-bold text-xs shadow-sm hover:bg-white transition-colors'
+          : 'px-2.5 py-1 rounded-lg bg-[var(--background)] text-[var(--foreground)] border border-[var(--border)] font-bold text-xs transition-colors';
+      });
+    }
+
+    // Abas de Fórmulas do Trabalho (Projetos 1 e 2)
+    document.querySelectorAll('.formula-tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        const target = tab.getAttribute('data-ftab');
+        document.querySelectorAll('.formula-tab').forEach(t => t.classList.toggle('active', t === tab));
+        const allCards = ['eq_sn', 'eq_wdd', 'eq_spec', 'eq_mc'];
+        allCards.forEach(cId => {
+          const el = document.getElementById(`fcard-${cId}`);
+          if (!el) return;
+          if (target === 'eq_all' || target === cId) {
+            el.classList.remove('hidden');
+          } else {
+            el.classList.add('hidden');
+          }
+        });
+      });
+    });
+
+    presetSelect.addEventListener('change', (e) => {
+      if (e.target.value !== 'custom') applyPreset(e.target.value);
+    });
+
+    sliderSpeed.addEventListener('input', (e) => {
+      simSpeed = parseFloat(e.target.value);
+      valSpeed.textContent = `${simSpeed.toFixed(1)}x`;
+    });
+
+    selectGeomMode.addEventListener('change', (e) => {
+      config.geomMode = e.target.value;
+      if (config.geomMode === 'single') activeRegionIdx = 0;
+      presetSelect.value = 'custom';
+      syncUI();
+    });
+
+    regTabs.forEach(btn => {
+      btn.addEventListener('click', () => {
+        activeRegionIdx = parseInt(btn.getAttribute('data-reg'), 10);
+        syncUI();
+      });
+    });
+
+    function markCustomAndSync() {
+      presetSelect.value = 'custom';
+      syncUI();
+    }
+
+    chkLockSum.addEventListener('change', (e) => {
+      config.lockSum = e.target.checked;
+      syncUI();
+    });
+
+    btnForceSigt1.addEventListener('click', () => {
+      const r = config.regions[activeRegionIdx];
+      const oldSigt = Math.max(0.01, r.sigs + r.siga);
+      r.sigt = 1.00;
+      r.sigs = +(r.sigs / oldSigt).toFixed(2);
+      r.siga = +(1.00 - r.sigs).toFixed(2);
+      markCustomAndSync();
+    });
+
+    sliderSigs.addEventListener('input', (e) => {
+      const r = config.regions[activeRegionIdx];
+      const targetSigt = r.sigt || 1.00;
+      let val = parseFloat(e.target.value);
+      if (config.lockSum) {
+        val = Math.min(targetSigt, Math.max(0, val));
+        r.sigs = +val.toFixed(2);
+        r.siga = +(targetSigt - r.sigs).toFixed(2);
+      } else {
+        r.sigs = +val.toFixed(2);
+        r.sigt = +(r.sigs + r.siga).toFixed(2);
+      }
+      markCustomAndSync();
+    });
+
+    sliderSiga.addEventListener('input', (e) => {
+      const r = config.regions[activeRegionIdx];
+      const targetSigt = r.sigt || 1.00;
+      let val = parseFloat(e.target.value);
+      if (config.lockSum) {
+        val = Math.min(targetSigt, Math.max(0, val));
+        r.siga = +val.toFixed(2);
+        r.sigs = +(targetSigt - r.siga).toFixed(2);
+      } else {
+        r.siga = +val.toFixed(2);
+        r.sigt = +(r.sigs + r.siga).toFixed(2);
+      }
+      markCustomAndSync();
+    });
+
+    sliderNusf.addEventListener('input', (e) => {
+      config.regions[activeRegionIdx].nusf = parseFloat(e.target.value);
+      markCustomAndSync();
+    });
+
+    sliderSext.addEventListener('input', (e) => {
+      config.regions[activeRegionIdx].sext = parseFloat(e.target.value);
+      markCustomAndSync();
+    });
+
+    sliderKeff.addEventListener('input', (e) => {
+      config.keff = parseFloat(e.target.value);
+      markCustomAndSync();
+    });
+
+    btnKeffOne.addEventListener('click', () => {
+      config.keff = 1.00;
+      markCustomAndSync();
+    });
+
+    btnKeffAuto.addEventListener('click', () => {
+      if (cachedSolutions && cachedSolutions.SC) {
+        config.keff = +cachedSolutions.SC.keffConverged.toFixed(3);
+        markCustomAndSync();
+      }
+    });
+
+    selectBcLeft.addEventListener('change', (e) => {
+      config.bcLeft = e.target.value;
+      markCustomAndSync();
+    });
+
+    selectBcRight.addEventListener('change', (e) => {
+      config.bcRight = e.target.value;
+      markCustomAndSync();
+    });
+
+    chkTrackNeutron.addEventListener('change', (e) => {
+      config.trackEnabled = e.target.checked;
+      if (config.trackEnabled && (!trackedParticle || !trackedParticle.isAlive)) {
+        spawnNewParticle(true);
+      }
+      updateStatsUI();
+    });
+
+    btnSpawnTracked.addEventListener('click', () => {
+      config.trackEnabled = true;
+      chkTrackNeutron.checked = true;
+      spawnNewParticle(true);
+      updateStatsUI();
+    });
+
+    chkFluxCurve.addEventListener('change', (e) => {
+      config.showFlux = e.target.checked;
+    });
+
+    chkSnRays.addEventListener('change', (e) => {
+      config.showSnRays = e.target.checked;
+    });
+
+    selectChartType.addEventListener('change', (e) => {
+      config.chartType = e.target.value;
+      drawQuantitativeChart();
+    });
+
+    selectSnOrder.addEventListener('change', (e) => {
+      config.snOrder = parseInt(e.target.value, 10);
+      recomputeAllSolutions();
+    });
+
+    selectMeshCells.addEventListener('change', (e) => {
+      config.meshCells = parseInt(e.target.value, 10);
+      syncUI();
+    });
+
+    btnPlay.addEventListener('click', () => {
+      isRunning = !isRunning;
+      btnPlay.textContent = isRunning ? '⏸ Pausar' : '▶ Continuar';
+      btnPlay.className = isRunning
+        ? 'px-2.5 py-1 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-semibold transition-colors'
+        : 'px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-semibold transition-colors';
+    });
+
+    btnStep.addEventListener('click', () => {
+      if (isRunning) {
+        isRunning = false;
+        btnPlay.textContent = '▶ Continuar';
+        btnPlay.className = 'px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-semibold transition-colors';
+      }
+      stepSimulationFrame(0.6);
+    });
+
+    btnReset.addEventListener('click', () => {
+      seedInitialParticles();
+    });
+
+    btnProjector.addEventListener('click', () => {
+      document.body.classList.toggle('projector-mode');
+      btnProjector.classList.toggle('bg-blue-600');
+      btnProjector.classList.toggle('text-white');
+      setTimeout(resizeCanvases, 30);
+    });
+
+    btnTheme.addEventListener('click', () => {
+      if (document.body.classList.contains('app-dark')) {
+        document.body.classList.remove('app-dark');
+        document.body.classList.add('app-light');
+      } else {
+        document.body.classList.remove('app-light');
+        document.body.classList.add('app-dark');
+      }
+      drawQuantitativeChart();
+    });
+
+    btnFullscreen.addEventListener('click', () => {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch(() => {});
+      } else {
+        document.exitFullscreen().catch(() => {});
+      }
+    });
+
+    btnExportPng.addEventListener('click', () => {
+      const exportCanvas = document.createElement('canvas');
+      const dpr = window.devicePixelRatio || 1;
+      const w = slabCanvas.width;
+      const h1 = slabCanvas.height;
+      const h2 = modulesVisible.charts ? chartCanvas.height : 0;
+      const footerH = Math.round(28 * dpr);
+      exportCanvas.width = w;
+      exportCanvas.height = h1 + h2 + footerH;
+      const ectx = exportCanvas.getContext('2d');
+      ectx.fillStyle = isDarkMode() ? '#090d16' : '#f8fafc';
+      ectx.fillRect(0, 0, w, exportCanvas.height);
+      ectx.drawImage(slabCanvas, 0, 0);
+      if (modulesVisible.charts) {
+        ectx.drawImage(chartCanvas, 0, h1);
+      }
+      // Assinatura NERY Soluções no rodapé da imagem exportada
+      ectx.fillStyle = isDarkMode() ? '#111827' : '#e2e8f0';
+      ectx.fillRect(0, h1 + h2, w, footerH);
+      ectx.fillStyle = isDarkMode() ? '#60a5fa' : '#1d4ed8';
+      ectx.font = `bold ${Math.round(11 * dpr)}px sans-serif`;
+      ectx.textAlign = 'left';
+      ectx.fillText('NERY Soluções — LabSN 1D (Simulador de Transporte de Partículas • Doutorado UESC)', Math.round(14 * dpr), h1 + h2 + Math.round(18 * dpr));
+
+      const link = document.createElement('a');
+      link.download = `nery_solucoes_labsn_${Date.now()}.png`;
+      link.href = exportCanvas.toDataURL('image/png');
+      link.click();
+    });
+
+    const btnDownloadApp = document.getElementById('btn-download-app');
+    if (btnDownloadApp) {
+      btnDownloadApp.addEventListener('click', () => {
+        const htmlContent = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
+        const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8;' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = 'NERY_Solucoes_LabSN_1D.html';
+        link.click();
+      });
+    }
+
+    btnExportCsv.addEventListener('click', () => {
+      if (!cachedSolutions) return;
+      const x = cachedSolutions.SC.xNodes;
+      const dd = cachedSolutions.DD.phiEdge;
+      const st = cachedSolutions.STEP.phiEdge;
+      const sc = cachedSolutions.SC.phiEdge;
+
+      let csv = 'x_cm,phi_DD,phi_Step,phi_SC\n';
+      for (let i = 0; i < x.length; i++) {
+        csv += `${x[i].toFixed(4)},${dd[i].toFixed(6)},${st[i].toFixed(6)},${sc[i].toFixed(6)}\n`;
+      }
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = `dados_fluxo_sn_I${config.meshCells}.csv`;
+      link.click();
+    });
+
+    setTimeout(() => {
+      resizeCanvases();
+      renderCourseworkFormulas();
+      applyPreset('proj1_het');
+      updateGlossaryCardUI();
+      animate();
+    }, 30);
+
+    window.addEventListener('load', () => {
+      renderCourseworkFormulas();
+      updateGlossaryCardUI();
+    });
+  </script>
+</body>
+</html>
